@@ -27,6 +27,8 @@ class PagesController extends \lithium\action\Controller {
 
 	public function view() {
 		$path = func_get_args() ?: array('home');
+		$this->set(array('topbarMenu' => true));
+		$this->set(array('active' => implode('/', $path)));
 		return $this->render(array('template' => join('/', $path)));
 	}
 }

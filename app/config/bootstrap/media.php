@@ -25,6 +25,12 @@ use lithium\util\Collection;
 
 Collection::formats('lithium\net\http\Media');
 
+Media::type('gpx', 'application/text', array(
+	'view' => 'lithium\template\View', 
+	'layout' => false,
+	'template' => false
+));
+
 /**
  * This filter is a convenience method which allows you to automatically route requests for static
  * assets stored within active plugins. For example, given a JavaScript file `bar.js` inside the

@@ -1,0 +1,246 @@
+if (otm === undefined) var otm = {};
+/*
+---
+
+name: Trails
+
+script: class.trails.js
+
+description: Trails Class that provides an overlay on Google Maps with trails
+
+copyright: &copy;, Nils Lagerkvist.
+
+license: GPLv3.
+
+authors:
+  - Nils Lagerkvist
+
+requires: []
+
+provides: [Trails, otm.Trails]
+
+...
+*/
+var Trails = new Class({
+
+	Implements: [Options, Events],
+	
+	options: {
+		color: otm.color.trail,
+		colorGraded: true,
+		zIndex: null,
+		polyline: true,
+		overlay: 'auto',
+		marker: true,
+		minZoom: 10, 		// The zoom level to switch from polylines to markers
+		maxZoom: 0,
+		exclude: []
+		//onDrawTrail: 
+		//onUnlinkTrail: 
+	},
+	
+	map: null,
+	call: '',
+	callback: function(){},
+	polylines: [],
+	markers: [],
+	isRedrawing: false,
+	
+	initialize: function(map, options){
+		this.setOptions(options);
+
+		this.map = map;
+			
+		this.setupEvents();
+		/* Removed temporarly
+		google.maps.event.addListenerOnce(this.map, 'bounds_changed', function(){
+		 	this.requestTrails();
+			this.setupEvents();
+      }.bind(this));
+      */		
+	},
+	
+	redraw: function(){
+			this.requestTrails();
+	},
+
+	clear: function(){
+		this.polylines.each(function(trail, trailId, polylines){
+			this.fireEvent('onUnlinkTrail', [trail]);
+			trail.setMap(null);
+			delete(polylines[trailId]);
+		}.bind(this));
+	},	
+
+	getTrail: function(id){
+		if(this.polylines[id])
+			return this.polylines[id];
+		else if (this.markers[id])
+			return this.markers[id]
+		else
+			return false;
+	},
+
+	setupEvents: function(){
+		google.maps.event.addListener(this.map, 'idle', this.redraw.bind(this));
+	},
+	
+	clearEvents: function(){
+		google.maps.event.clearListeners(this.map, 'idle');
+	},
+
+	setupRequest: function(){
+		var zoom = this.map.getZoom();
+		if (this.options.markers  && (this.options.minZoom >= zoom || !this.options.polyline) && this.options.maxZoom <= zoom){
+			this.call = 'trails.get.marker';
+			this.callback = this.drawMarkers;
+			return true;
+		}
+		else if (this.options.polyline && this.options.maxZoom <= zoom){
+				this.call = 'trails.get.polyline';
+				this.callback = this.drawTrails;
+				return true;
+		}
+		else 
+			return false;
+	},
+
+	requestTrails: function(){
+		if (!this.setupRequest())
+			return;
+			
+		var envelope = this.map.getBounds();		
+		
+		new Request.JSON({
+			url: otm.url.rpc, 
+			onSuccess: this.callback.bind(this),
+			data: {
+				'call': this.call, 
+				'swlat': envelope.getSouthWest().lat(), 
+				'swlng': envelope.getSouthWest().lng(),
+				'nelat': envelope.getNorthEast().lat(), 
+				'nelng': envelope.getNorthEast().lng(),
+				'zoom': this.map.getZoom()
+			}
+		}).get();
+	},
+	
+	drawTrails: function(response){
+		if (response.code == 0)
+			return;
+		
+		// Mark all polylines to be unlinked
+		for (var i in this.polylines){
+			this.polylines[i].unlink = 1;
+		}
+		// Mark all polylines to be unlinked
+		for (var i in this.markers){
+			this.markers[i].unlink = 1;
+		}
+
+		for (var i = 0; i < response.count; i++){
+			var trail;
+			
+			if (this.options.exclude.indexOf(Number(response.trails[i].trailId)) != -1)
+				continue;
+				
+			if (this.polylines && this.polylines[response.trails[i].trailId]) // Excisting trail
+				delete(this.polylines[response.trails[i].trailId].unlink);
+			else{	// new trail
+				trail = otm.drawTrail(response.trails[i].polyline, {
+					map: this.map,
+					zIndex: this.options.zIndex,
+					color: this.options.colorGraded ? otm.color.grade[response.trails[i].grade] : this.options.color
+				});
+
+				trail.trail = 1;
+				trail.trailId = response.trails[i].trailId;
+				trail.name = response.trails[i].name;
+				trail.grade = response.trails[i].grade;
+				trail.length = response.trails[i].distance;
+				this.polylines[trail.trailId] = trail;
+				
+				this.fireEvent('onDrawTrail', [trail]);
+			}
+		}
+		
+		// TODO: Add this as function
+		// Remove trails that are not visable
+		this.polylines.each(function(trail, trailId, polylines){
+			if (trail.unlink && trail.unlink == 1){
+				this.fireEvent('onUnlinkTrail', [trail]);
+				trail.setMap(null);
+				delete(polylines[trailId]);
+			}
+		}.bind(this));
+		
+		// Remove markers that are not visable
+		this.markers.each(function(trail, trailId, markers){
+			if (trail.unlink && trail.unlink == 1){
+				this.fireEvent('onUnlinkMarker', [trail]);
+				trail.setMap(null);
+				delete(markers[trailId]);
+			}
+		}.bind(this));
+	},
+	
+	drawMarkers: function(response){
+		if (response.code == 0)
+			return;
+
+		// Mark all polylines to be unlinked
+		for (var i in this.polylines){
+			this.polylines[i].unlink = 1;
+		}
+		
+		// Mark all polylines to be unlinked
+		for (var i in this.polylines){
+			this.polylines[i].unlink = 1;
+		}
+
+		for (var i = 0; i < response.count; i++){
+			var trail;
+			
+			if (this.options.exclude.indexOf(parseInt(response.trails[i].trailId)) != -1)
+				continue;
+				
+			if (this.markers && this.markers[response.trails[i].trailId]) // Excisting trail
+				delete(this.markers[response.trails[i].trailId].unlink);
+			else{	// new trail
+				trail = new google.maps.Marker({
+			      position: new google.maps.LatLng(response.trails[i].lat, response.trails[i].lng),  
+      			map: this.map,
+      			icon: otm.icons.trail
+				});   
+
+				trail.trail = 1;
+				trail.trailId = response.trails[i].trailId;
+				trail.name = response.trails[i].name;
+				trail.grade = response.trails[i].grade;
+				trail.length = response.trails[i].distance;
+				this.markers[trail.trailId] = trail;
+				
+				this.fireEvent('onDrawTrailMarker', [trail]);
+			}
+		}
+		
+		// TODO: Add this as function
+		// Remove trails that are not visable
+		this.polylines.each(function(trail, trailId, polylines){
+			this.fireEvent('onUnlinkTrail', [trail]);
+			trail.setMap(null);
+			delete(polylines[trailId]);
+		}.bind(this));
+		
+		// Remove markers that are not visable
+		this.markers.each(function(trail, trailId, markers){
+			if (trail.unlink && trail.unlink == 1){
+				this.fireEvent('onUnlinkMarker', [trail]);
+				trail.setMap(null);
+				delete(markers[trailId]);
+			}
+		}.bind(this));
+	
+	}
+	
+});

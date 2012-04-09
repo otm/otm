@@ -21,6 +21,20 @@ use lithium\core\Libraries;
 use lithium\core\Environment;
 use lithium\action\Dispatcher;
 
+Environment::is(function(){
+    $production = array();
+    $staging    = array('stage.opentrailmap.net', 'dev1234.opentrailmap.net');
+    $local      = array('192.168.0.14', 'localhost', 'dev.opentrailmap.net', 'li3.opentrailmap.net');
+
+	if (in_array($_SERVER['HTTP_HOST'], $local))
+		return 'development';
+
+	if (in_array($_SERVER['HTTP_HOST'], $staging))
+		return 'staging';
+
+	return 'production';
+});
+
 /**
  * This filter intercepts the `run()` method of the `Dispatcher`, and first passes the `'request'`
  * parameter (an instance of the `Request` object) to the `Environment` class to detect which

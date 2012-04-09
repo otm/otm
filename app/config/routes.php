@@ -29,6 +29,11 @@ use lithium\core\Environment;
  */
 Router::connect('/', 'Pages::view');
 
+Router::connect('/map', 'Trail::index');
+Router::connect('/trail/find.{:type}', array('controller' => 'Trail', 'action' => 'envelope'));
+Router::connect('/trail/{:id:[0-9]+}.{:type}', 'Trail::view');
+Router::connect('/trail/{:id:[0-9]+}', 'Trail::view');
+
 /**
  * Connect the rest of `PagesController`'s URLs. This will route URLs like `/pages/about` to
  * `PagesController`, rendering `/views/pages/about.html.php` as a static page.
@@ -42,6 +47,8 @@ Router::connect('/pages/{:args}', 'Pages::view');
  * [http://path/to/app/test](/test) to run tests.
  */
 if (!Environment::is('production')) {
+	Router::connect('/build/js/{:file}', 'Build::js');
+
 	Router::connect('/test/{:args}', array('controller' => 'lithium\test\Controller'));
 	Router::connect('/test', array('controller' => 'lithium\test\Controller'));
 }

@@ -36,7 +36,7 @@ require __DIR__ . '/bootstrap/libraries.php';
  * rules of the `ErrorHandler` class to provide a high level of control over managing exceptions in
  * your application, with no impact on framework or application code.
  */
-// require __DIR__ . '/bootstrap/errors.php';
+require __DIR__ . '/bootstrap/errors.php';
 
 /**
  * This file contains configurations for connecting to external caching resources, as well as
@@ -69,7 +69,7 @@ require __DIR__ . '/bootstrap/action.php';
  * transliterations, localized validation, and how localized text should be loaded. Uncomment this
  * line if you plan to globalize your site.
  */
-// require __DIR__ . '/bootstrap/g11n.php';
+require __DIR__ . '/bootstrap/g11n.php';
 
 /**
  * This file contains configurations for handling different content types within the framework,

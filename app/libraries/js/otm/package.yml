@@ -1,0 +1,29 @@
+name: "OpenTrailmap"
+
+version: "0.2-dev"
+
+exports: "opentrailmap.js"
+
+web: "[opentrialmap.net](http://opentrailmap.net/)"
+
+description: "Opentrialmap is an online trail repository"
+
+license: "GPLv3"
+
+copyright: "&copy; Nils Lagerkvist"
+
+authors:
+  - "Nils Lagerkvist"
+
+sources:
+  - "otm.core.js"
+  - "otm.config.js"
+  - "otm.map.js"
+  - "class.chart.js"
+  - "class.gate.js"
+  - "class.likes.js"
+  - "class.line.js"
+  - "class.mapcontrol.js"
+  - "class.pois.js"
+  - "class.trail.js"
+  - "class.trails.js"
