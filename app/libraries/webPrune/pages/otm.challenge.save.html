@@ -1,0 +1,50 @@
+<p> By default a challenge is open to the public for participation and view. By making a challenge 
+unlisted it's only accessable by people with a link to the challenge. If the challenge is private only 
+you can access the challenge. 
+</p>
+
+<form id="saveForm" action="#">
+<p>Name:
+	<span class="saveForm">
+		<input style="text-align: right;" type="text" size="24" name="name">
+	</span>
+</p>
+<p>Access:
+	<span class="saveForm">
+		<input type="radio" name="view" value="public" checked="checked">Public</input>
+		<input type="radio" name="view" value="nonlisted">Unlisted</input> 
+		<input type="radio" name="view" value="private">Private</input>
+	</span>
+</p>
+<p>Participation: 
+	<span class="saveForm">
+		<input type="radio" name="join" value="open" checked="checked">Open</input>
+		<input type="radio" name="join" value="closed">Closed</input>
+	</span>
+</p>
+<input class="right" type="submit" name="save" value="Save"/>
+<input class="right" type="button" name="cancel" value="Cancel"/>
+</form>
+<script type="text/javascript">
+$('saveForm').addEvent('submit', function(event){
+	event.stop();
+	var form = $('saveForm');
+	if (form.name.value == ''){
+		MUI.notification('Please enter a name');
+		return false;
+	}
+	otm.challenge.save({
+		name: form.name.value, 
+		view: form.getElement('input[name=view]:checked').value, 
+		access: form.getElement('input[name=join]:checked').value,
+		onSave: function(ok){
+			if (ok)
+				MochaUI.closeWindow($('saveChallenge'));
+		}
+	});
+});
+$('saveForm').cancel.addEvent('click', function(){
+	MochaUI.closeWindow($('saveChallenge'));
+});
+</script>
+

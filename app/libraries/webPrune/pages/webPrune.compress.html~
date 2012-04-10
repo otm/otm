@@ -1,0 +1,17 @@
+<p><strong>Info:</strong> The compression will remove points that are to close to each other. 
+This function will just select the points. After you will need to delete them. 
+</p>
+
+<form id="compressForm" action="#">
+<p>Compression: <input style="text-align: right;" type="text" size="24" name="meters" value="3"> m</p>
+<input class="right" type="submit" name="compress" value="Compress"/>
+<input class="right" type="button" name="cancel" value="Cancel" onClick="MochaUI.closeWindow($('compress'));"/>
+</form>
+<script type="text/javascript">
+$('compressForm').addEvent('submit', function(event){
+	event.stop(); 
+	MUI.notification(prune.compress($('compressForm').meters.value) + ' points selected');
+	MochaUI.closeWindow($('compress'));
+});
+</script>
+

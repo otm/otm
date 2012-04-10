@@ -1,0 +1,32 @@
+<p>
+Files must be of GPX format. There are several programs to export files to GPX.
+</p>
+
+<form id="loadForm" action="#">
+<p>File: <input type="file" name="file"></p>
+<input class="right" type="submit" name="load" value="Load"/>
+<input class="right" id="btnCancelOpen" type="button" name="cancel" value="Cancel"/>
+</form>
+<script type="text/javascript">
+console.log('adding events');
+$('loadForm').addEvent('submit', function(event){
+	event.stop(); 
+	event.preventDefault();
+	
+	// on callback load prune.ui.loadFile();
+	console.log('sending request');
+	new Request.JSON({
+		url: rpc,
+		call: 'webprune.load.gpx',
+		onSuccess: function(response){
+			console.log('got response: ' + response.status);
+		}
+	}).post($('loadForm'));
+	MochaUI.closeWindow($('openGpx'));
+});
+
+$('btnCancelOpen').addEvent('click', function(event){
+	event.stop();
+	MochaUI.closeWindow($('openGpx'));
+});
+</script>

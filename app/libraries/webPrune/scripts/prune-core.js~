@@ -1,0 +1,1271 @@
+/*
+---
+
+name: Core
+
+script: prune-core.js
+
+description: Contains the core of the webPrune application.
+
+copyright: &copy;, Nils Lagerkvist.
+
+license: GPLv3.
+
+authors:
+  - Nils Lagerkvist
+
+requires: [MUI]
+
+provides: [Core, prune]
+
+...
+*/
+
+
+
+var osmMapType = new google.maps.ImageMapType({
+	getTileUrl: function(coord, zoom) {
+		return "http://tile.openstreetmap.org/" +
+		zoom + "/" + coord.x + "/" + coord.y + ".png";
+	},
+	tileSize: new google.maps.Size(256, 256),
+	isPng: true,
+	alt: "Visa OpenStreetMap karta",
+	name: "OSM",
+	maxZoom: 19
+});
+
+
+var prune = {
+	cSelect: {
+		shift: false,
+		ctrl: false,
+		alt: false,
+		focus: null,
+		range: []
+	},
+	color: {
+		unselected: '#dddddd',
+		selected: '#6666ff',
+		sMouseOver: '#6600ff',
+		uMouseOver: '#666666',
+		polyline: '#0000FF',
+		mapBackground: '#ffffff'
+	},
+	points: {
+		count: 0,
+		visable: 0,
+		limit: 150,
+		marker: [],
+		edit: null,
+		polyline: null,
+		bounds: null
+	},
+	gpx: {
+		xml: null
+	},
+	history: [],
+	overlayEvent: null,
+	mapOverlay: null,
+	map: null,
+	chart: null,
+	graphId: null,
+	graphParent: null,
+	keyboard: null,
+	init: function(options){
+		if (!google || !google.maps)
+			alert("Google maps is not loaded");
+		
+		if (options && options.graphId)		
+			prune.graphId = options.graphId;
+		if (options && options.graphParent)		
+			prune.graphParent = options.graphParent;
+			
+		var myOptions = {
+			zoom: 2,
+			center: new google.maps.LatLng(0, 0),
+	      mapTypeId: google.maps.MapTypeId.ROADMAP,
+	      backgroundColor: prune.color.mapBackground,
+			mapTypeControlOptions: {
+				mapTypeIds: [
+					'OSM', 
+					google.maps.MapTypeId.ROADMAP, 
+					google.maps.MapTypeId.HYBRID, 
+					google.maps.MapTypeId.SATELLITE, 
+					google.maps.MapTypeId.TERRAIN
+				],
+				style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR
+			}
+
+	   };
+		prune.map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+		prune.map.mapTypes.set('OSM',osmMapType);
+		//prune.map.setMapTypeId('OSM');
+
+		google.maps.event.addListener(prune.map, 'idle', prune.updateView);
+		google.maps.event.addListener(prune.map, 'click', function(event){prune.hideContextMenu(); });		
+		google.maps.event.addListener(prune.map, 'rightclick', function(event){
+			if (!prune.overlayEvent)
+				prune.showContextMenu(event.latLng); 
+			else
+				prune.overlayEvent = null;
+		});
+	   
+	   prune.points.bounds = new google.maps.LatLngBounds();
+
+	   prune.mapOverlay = new MapOverlay(prune.map);
+
+		Event.Keys.shift = 16;
+
+		prune.keyboard = new Keyboard({
+			events: { 
+				'shift+d': function(){prune.del(prune.cSelect.range); },
+				'ctrl+e': function(){prune.edit(prune.cSelect.focus);},
+				'ctrl+a': function(e){
+					e.preventDefault();
+					prune.selectRange(prune.points.marker[0], prune.points.marker[prune.points.count-1]);
+				},
+				'delete': function(){prune.del(prune.cSelect.range); },
+				'esc': function(){
+					if (prune.points.edit)
+						prune.editCancel();
+					else
+						prune.deselectAll(); },
+				'enter': function(){
+					if (prune.points.edit)
+						prune.editEnd();
+				},
+				'shift+c': function(){prune.compress(); }, 
+				'ctrl+left': function(){prune.selectNext(-1); },
+				'ctrl+right': function(){prune.selectNext(); },
+				'keydown:shift+ctrl': function(){prune.cSelect.shift = true;prune.cSelect.ctrl = true;},
+				'keyup:shift+ctrl': function(){prune.cSelect.shift = false;prune.cSelect.ctrl = false;},
+				'keydown:shift': function(){prune.cSelect.shift = true;},
+				'keyup:shift': function(){prune.cSelect.shift = false;},
+				'keydown:ctrl': function(){prune.cSelect.ctrl = true;},
+				'keyup:ctrl': function(){prune.cSelect.ctrl = false;},
+				//'keydown:alt': function(){prune.cSelect.alt = true;},
+				//'keyup:alt': function(){prune.cSelect.alt = false;}
+			}
+		});
+		prune.keyboard.activate()
+		
+		window.addEvent('keydown', function(event){
+			if (event.key == "shift") prune.cSelect.shift = true;
+			if (event.key == "control") prune.cSelect.ctrl = true;
+			//if (event.key == "alt") prune.cSelect.alt = true;
+		});
+		window.addEvent('keyup', function(event){
+	    	if (event.key == "shift") prune.cSelect.shift = false;
+	    	if (event.key == "control") prune.cSelect.ctrl = false;
+	    	//if (event.key == "alt") prune.cSelect.alt = false;
+		});
+	
+	},
+	resize: function(el){
+		$('map_canvas').setStyle('width', el.getStyle('width'));
+		$('map_canvas').setStyle('height', el.getStyle('height'));
+		if (prune.map)
+			google.maps.event.trigger(prune.map, 'resize');
+	},
+	mapMenu: [
+		{
+			label: 'Zoom all',
+			action: function(){
+				prune.zoomAll();
+				// TODO: remove - prune.map.fitBounds(prune.points.bounds);
+				prune.hideContextMenu();
+			}
+		},
+		{
+			label: 'Select first point',
+			action: function(){
+				if (prune.points.marker[0])
+					prune.select(prune.points.marker[0]);
+				prune.hideContextMenu();
+			},
+			options: {separator: true} 
+		},
+		{
+			label: 'Select last point',
+			action: function(){
+				if (prune.points.marker[prune.points.count-1])
+					prune.select(prune.points.marker[prune.points.count-1]);
+				prune.hideContextMenu();
+			}
+		},
+		{
+			label: 'Deselect',
+			action: function(){
+				prune.deselectAll();
+				prune.hideContextMenu();
+			}
+		}
+	],
+	showContextMenu: function(latlng) {
+		contextMenu = $('contextmenu');
+		if (contextMenu){
+			prune.hideContextMenu();
+		}
+
+		contextMenu = Element('ul');
+		contextMenu.set('id', 'contextmenu');		
+		var addMenuItem = function(label, event, options){
+			if (!options)
+				var options = {};
+			var li = new Element('li');
+			li.grab(new Element('a',{
+				'id': options.id ? options.id : null,
+				'text': label,
+				'styles': {
+					'cursor': 'default',
+					'border-top': options.separator ? '1px solid #999' : null,
+					'border-bottom': options.bottomSeparator ? '1px solid #999' : null
+				},
+				'events': {
+					'click': event
+				}
+			}));
+			contextMenu.grab(li);
+
+		};
+		
+		if (prune.points.edit){
+			addMenuItem('Save edit', function(){
+				prune.editEnd();
+				prune.hideContextMenu();
+			});
+			addMenuItem('Cancel edit', function(){
+				prune.editCancel();
+				prune.hideContextMenu();
+			});
+		}		
+		else if (prune.overlayEvent){
+			addMenuItem('Delete', function(){
+				prune.del(prune.cSelect.range);
+				prune.hideContextMenu();
+			});
+			addMenuItem('Deselect', function(){
+				prune.deselectAll();
+				prune.hideContextMenu();
+			});
+			if (prune.cSelect.range.length == 1)
+				addMenuItem('Edit', function(){
+					prune.edit(prune.cSelect.focus);
+					prune.hideContextMenu();
+				});
+			if (prune.cSelect.range.length == 2)
+				addMenuItem('Interpolate', function(){
+					prune.interpolate(prune.cSelect.range[0], prune.cSelect.range[1]);
+					prune.hideContextMenu();
+				});
+		
+		}
+		else{ //prune.mapMenu
+			prune.mapMenu.each(function(menuItem){
+				addMenuItem(menuItem.label, menuItem.action, menuItem.options);
+			});
+		}
+		
+		$(prune.map.getDiv()).grab(contextMenu);		
+	   var mapSize = $('map_canvas').getSize();
+		var menuSize = contextMenu.getSize();		
+		var click = prune.mapOverlay.getProjection().fromLatLngToContainerPixel(latlng);
+		prune.lastClick = latlng;		
+		
+		//if to close to the map border, decrease x position
+		if((mapSize.x - click.x ) < menuSize.x)
+			click.x = mapSize.x - menuSize.x;
+		//if to close to the map border, decrease y position
+		if((mapSize.y - click.y ) < menuSize.y)
+			click.y = click.y - menuSize.y;
+		
+		contextMenu.setStyles({
+			'left': click.x, 
+			'top': click.y, 
+			'visibility': 'visible'
+		});
+	},
+	hideContextMenu: function(){
+		contextMenu = $('contextmenu');
+		if (contextMenu)
+			contextMenu.dispose();
+			
+		prune.markerEvent = null;
+	},
+	updateView: function(){
+		var visable = 0;
+		var bound = prune.map.getBounds();
+	
+		for (var i = 0; i < prune.points.count; i++){
+			if (bound.contains(prune.points.marker[i].getCenter()))
+				visable++;
+		}
+	
+	   if (visable < prune.points.limit){
+	   	prune.points.visable = visable;
+			for (var i = 0; i < prune.points.count; i++){
+	    		var visable = bound.contains(prune.points.marker[i].getCenter());
+	    		if (visable && !prune.points.marker[i].getMap() && !prune.points.marker[i].edit)
+	    			prune.points.marker[i].setMap(prune.map);
+	    		else if (!visable && prune.points.marker[i].getMap())
+	    			prune.points.marker[i].setMap(null);
+	   	}
+	   	if(typeof prune.onViewChange == 'function')
+				prune.onViewChange();
+	   }
+	   else{
+			prune.points.visable = 0;
+			for (var i = 0; i < prune.points.count; i++)
+				prune.points.marker[i].setMap(null);
+
+	   	if(typeof prune.onViewChange == 'function')
+				prune.onViewChange();
+		}
+	},
+	loadGPX: function(gpx){
+		prune.gpx.array = [];
+		
+		var distance = function(p1, p2){
+			var dLat  = prune.rad(p2.lat - p1.lat);
+			var dLong = prune.rad(p2.lng - p1.lng);
+			
+			var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+				Math.cos(prune.rad(p1.lat)) * Math.cos(prune.rad(p2.lat)) * Math.sin(dLong/2) * Math.sin(dLong/2);
+			var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+			var d = prune.R * c;
+	
+			return d.toFixed(3);
+		};
+		 
+		var parser = new DOMParser();
+		prune.gpx.xml = parser.parseFromString(gpx,'text/xml');
+		 
+		var tracks = prune.gpx.xml.documentElement.getElementsByTagName("trk");
+		for (var i=0; i < tracks.length; i++){
+			var segments = tracks[i].getElementsByTagName("trkseg");
+			
+			for (var i=0; i < segments.length; i++){
+				var trackpoints = segments[i].getElementsByTagName("trkpt");
+				if (trackpoints.length == 0)
+					return;
+				
+				var prevPt = {
+					lat: trackpoints[0].getAttribute("lat"),
+					lng: trackpoints[0].getAttribute("lat")
+				};
+				
+				for (var i=0; i < trackpoints.length; i++){
+					var pt = {
+						idx: i,
+						lat: parseFloat(trackpoints[i].getAttribute("lat")),
+						lng: parseFloat(trackpoints[i].getAttribute("lon")),
+					};
+					pt.dist = distance(prevPt, pt);
+					prune.gpx.array.push(pt);
+					prevPt = pt;
+				}
+			}
+		}
+		prune.load(prune.gpx.array);
+	},
+	load: function(trail){
+		var length = trail.length;
+		var points = [];
+		for (var i = 0; i < length; i++){
+			// Create array for initializing the polyline
+			var point = new google.maps.LatLng(trail[i].lat, trail[i].lng);
+			points.push(point);
+			prune.points.bounds.extend(point);
+			
+			// create marker
+			var marker = prune.createMarker(point, 3, trail[i].idx);
+			if (trail[i].ele)
+				marker.ele = trail[i].ele;
+			marker.dist = trail[i].dist; 
+			prune.points.marker.push(marker);
+		}
+		
+		prune.points.count = prune.points.marker.length;
+		prune.map.fitBounds(prune.points.bounds);
+		
+		// create polyline
+		prune.points.polyline = new google.maps.Polyline({
+			path: points,
+			strokeColor: prune.color.polyline,
+			strokeOpacity: 0.8,
+			strokeWeight: 2,
+			map: prune.map
+		});
+
+		if (prune.graphId)
+			prune.chart(prune.graphId, prune.graphParent);
+			//prune.graph(prune.graphId, prune.graphParent);		
+		
+		if(typeof prune.onLoad == 'function')
+			prune.onLoad();
+	},
+	createMarker: function(latlng, size, idx){
+		var circle = new google.maps.Circle({
+			'center': latlng,
+			'radius': size,
+			'fillColor': '#dddddd',
+			'fillOpacity': 0.8,
+			'strokeColor': '#333333',
+			'strokeWeight': 1,
+			'clickable': true
+		});
+		if (idx != null)
+			circle.idx = idx;
+			
+		google.maps.event.addListener(circle, 'mouseover', function(){
+			if (circle.selected)
+				circle.setOptions({
+					'fillColor': prune.color.sMouseOver 
+				});		
+			else
+				circle.setOptions({
+					'fillColor': prune.color.uMouseOver 
+				});
+		});
+		google.maps.event.addListener(circle, 'mouseout', function(){
+			if (circle.selected)
+				circle.setOptions({
+					'fillColor': prune.color.selected
+				});		
+			else
+				circle.setOptions({
+					'fillColor': prune.color.unselected
+				});
+		});
+		google.maps.event.addListener(circle, "click", function() {
+			prune.hideContextMenu();
+						
+			if (prune.cSelect.shift && prune.cSelect.ctrl){
+				var from = prune.cSelect.focus;
+				prune.selectRange(from, circle, true);
+			}
+			else if (prune.cSelect.shift){
+				var from = prune.cSelect.focus;
+				prune.deselectAll();
+				prune.selectRange(from, circle);
+			}
+			else if (prune.cSelect.ctrl){
+				prune.select(circle, true);
+			} 
+			else if (prune.cSelect.alt){
+				prune.edit(circle);
+			}
+			else {
+				prune.deselectAll();
+				prune.select(circle);
+			}
+			
+		});
+		google.maps.event.addListener(circle, 'rightclick', function(event){
+			prune.overlayEvent = true;
+			if (!circle.selcted)
+				prune.select(circle);
+				
+			prune.showContextMenu(event.latLng);
+			 
+		});
+		
+		return circle;
+	},
+	push: function(undo){
+		prune.history.push(undo);
+		
+		if(prune.propagateEvents && typeof prune.onUndo == 'function')
+			prune.onUndo();			
+
+		return prune.history.length;
+	},
+	undo: function(levels){
+		if (prune.history.length == 0){
+			return 0;
+		}
+			
+		var func = prune.history.pop();
+		func();
+		
+		if (levels && levels > 1){
+			return prune.undo(levels-1);		
+		}
+		else{
+			if(prune.propagateEvents && typeof prune.onUndo == 'function')
+				prune.onUndo();			
+			prune.updateView();
+			return prune.history.length;
+		}
+			
+	},
+	actDelete: function(){
+		if (prune.cSelect.range.length == 1)
+			prune.del(prune.cSelect.focus);
+		else
+			prune.del(prune.cSelect.range);
+	},
+	del: function(obj){
+		if(obj instanceof Array && obj.length == 1)
+			obj = obj[0];
+							
+		if (obj instanceof google.maps.Circle){
+			// check if it's the last point and select previous point
+			// else select next
+			if (obj == prune.points.marker[prune.points.count -1])
+				prune.selectNext(-1);
+			else
+				prune.selectNext();
+			prune.deletePoint(obj);
+		}
+		else if(obj instanceof Array){
+			prune.deleteRange(obj);
+		}
+		else
+			alert("prune.delete: unknown object type");		
+		
+		if(prune.propagateEvents && typeof prune.onUndo == 'function')
+			prune.onUndo();
+	},
+	deletePoint: function(point, from){
+		// remove circle from map
+		point.setMap(null); 
+
+		// remove circle from selection
+		prune.deselect(point)
+		
+		// Delete marker and polyline segment
+		var count = prune.points.count;
+		if (!(from && from >= 0 && from < count))
+			from = count-1;
+			
+		for (var i = from; i >= 0; i--){
+			if (point == prune.points.marker[i]){
+				prune.points.marker.splice(i, 1);
+				prune.points.count--;
+
+				prune.points.polyline.getPath().removeAt(i);
+
+				if (prune.propagateEvents)
+					prune.updateChart();
+				
+				point.undoIdx = i;
+				prune.push(function(){
+					prune.addPoint(point, point.undoIdx);	
+				});
+				return i;
+			}
+		}
+	},
+	deleteRange: function(range){
+		prune.stopEvents();
+		prune.points.polyline.setMap(null);
+		var length = range.length;
+		var idx = prune.points.count-1;
+		for (var i = length-1; i >= 0; i--){
+			idx = prune.deletePoint(range[i], idx);
+			idx--;
+		}
+		prune.points.polyline.setMap(prune.map);
+		prune.updateChart();
+		prune.deselectAll();
+		prune.enableEvents();
+
+		prune.push(function(){
+			prune.stopEvents();
+			prune.points.polyline.setMap(null);
+			prune.undo(length);
+			prune.points.polyline.setMap(prune.map);
+			prune.updateChart();
+			prune.enableEvents();
+			if(prune.propagateEvents && typeof prune.onUndo == 'function')
+				prune.onUndo();
+			return length;
+		});
+	},
+	edit: function(point){
+		if (prune.points.edit)
+			return;
+			
+		prune.points.edit = point;
+		point.setMap(null);
+		
+		var image = new google.maps.MarkerImage('/images/gIcons/movable.png',
+		   new google.maps.Size(24, 24),
+         new google.maps.Point(0,0),
+	      new google.maps.Point(12, 12)
+	   );
+		point.editMarker = new google.maps.Marker({
+			map: prune.map,
+			position: point.getCenter(),
+			draggable: true,
+			raiseOnDrag: false,
+			flat: true,
+			title: 'Drag to edit position',
+			icon: image
+		});
+		google.maps.event.addListener(point.editMarker, 'rightclick', function(event){
+			prune.showContextMenu(event.latLng);
+		});
+
+		
+		// Set edit with polyline index
+		for (var i = prune.points.marker.length-1; i >= 0; i--){
+			if (point == prune.points.marker[i]){
+				point.edit = i;
+				break;
+			}
+		}
+		
+		google.maps.event.addListener(point.editMarker, 'drag', prune.pointMoved);		
+		
+		if(prune.propagateEvents && typeof prune.onPtEdit == 'function')
+			prune.onPtEdit('start');
+	},
+	editEnd: function(){
+		var point = prune.points.edit;
+		var oldPositon = point.getCenter();
+		point.setCenter(point.editMarker.getPosition());
+		point.setMap(prune.map);
+		point.editMarker.setMap(null);
+		delete point.editMarker;
+		delete prune.points.edit;
+		delete point.edit;
+	
+		prune.push(function(){
+			prune.movePoint(point, oldPositon, point.edit);
+		});
+				
+		if(prune.propagateEvents && typeof prune.onPtEdit == 'function')
+			prune.onPtEdit('end');
+	},
+	editCancel: function(){
+		var point = prune.points.edit;
+		point.editMarker.setMap(null);
+		prune.points.polyline.getPath().setAt(point.edit, point.getCenter());
+		point.setMap(prune.map);
+		delete point.editMarker;
+		prune.points.edit = null;
+
+		if(prune.propagateEvents && typeof prune.onPtEdit == 'function')
+			prune.onPtEdit('cancel');
+	},
+	pointMoved: function(mouseEvent){
+		prune.points.polyline.getPath().setAt(prune.points.edit.edit, mouseEvent.latLng);
+	},
+	movePoint: function(point, latlng, polyIdx){
+		point.setCenter(latlng);
+		prune.points.polyline.getPath().setAt(polyIdx, latlng);
+	},
+	getIndex: function(point){
+		for (var i = 0; i < prune.points.count; i++){
+			if (point == prune.points.marker[i]){
+				return i;
+			}
+		}
+	},
+	interpolate: function(pt1, pt2){
+		var idx1 = prune.getIndex(pt1);
+		var idx2 = prune.getIndex(pt2);
+		if (Math.abs(idx1 - idx2) != 1){
+			prune.dlgError('Unable to interpolate, points have to be adjacent', {
+				closeAfter: 3000,
+				width: 300
+			});
+			return false;
+		}
+		var newPt = google.maps.geometry.spherical.interpolate(pt1.getCenter(), pt2.getCenter(), 0.5);
+		var point = prune.createMarker(newPt, 3, null);
+		point.ele = (pt1.ele + pt2.ele)/2;
+		var idx = (idx1 > idx2) ? idx1 : idx2;
+		prune.add(point, idx);
+		
+		prune.push(function(){
+			prune.del(point);	
+		});
+		
+		point.setMap(prune.map);
+		return true;
+	},
+	altitudeOffset: function(points, offset){
+		if (typeof offset == "string")
+			offset = parseFloat(offset);
+			
+		points.each(function(point){
+			if (point.ele)
+				point.ele = point.ele + offset;
+		});
+
+		prune.push(function(){
+			prune.altitudeOffset(points, -1*offset);	
+		});		
+		
+		if (prune.propagateEvents)
+			prune.updateChart();
+	},
+	altitudeCorrection: function(disableUndo){
+		var locations = [];
+		var currentEle = [];
+		var offset = 0;
+		var count = prune.points.marker.length;
+		var samples = 20;
+		var pointsBetweenSamples = parseInt(count/samples);
+		for (var i = 0; i < count-1; i = i + pointsBetweenSamples){
+			locations.push(prune.points.marker[i].getCenter());
+			currentEle.push(prune.points.marker[i].ele);
+		}
+		var elevator = new google.maps.ElevationService();
+		elevator.getElevationForLocations({'locations': locations}, function(results, status){
+			if (status == google.maps.ElevationStatus.OK) {
+				results.each(function(res, idx){
+					offset = offset + res.elevation - currentEle[idx];				
+				});
+				offset = offset / currentEle.length;
+				prune.altitudeOffset(prune.points.marker, offset);
+				prune.dlgError('Adjusted the elevation with ' + Math.round(offset*10)/10 + "m", {width: 300});
+			} else {
+				prune.dlgError("Elevation service failed due to: " + status);
+			}
+		});
+	},
+	reverse: function(disableUndo){
+		prune.points.marker.reverse();
+		var pts = [];
+		prune.points.marker.each(function(pt){
+			pts.push(pt.getCenter());
+		});
+		prune.points.polyline.setPath(pts);
+		
+		if (!disableUndo){
+			prune.push(function(){
+				prune.reverse(true);	
+			});		
+		}
+		if (prune.propagateEvents)
+			prune.updateChart();
+	},
+	zoomAll: function(){
+		prune.map.fitBounds(prune.points.bounds);
+	},
+	zoomSelected: function(){
+		if (!(prune.cSelect.range && prune.cSelect.range.length > 0))
+			return false;
+			
+		var bounds = new google.maps.LatLngBounds();
+		prune.cSelect.range.each(function(point){
+			bounds.extend(point.getCenter());
+		});
+		prune.map.fitBounds(bounds);
+		return true;
+	},
+	add: function(obj, index){
+		if (obj instanceof google.maps.Circle)
+			prune.addPoint(obj, index);
+		else if(obj instanceof Array)
+			prune.addRange(obj, index);
+		else
+			alert("prune.add: unknown object type");
+	},
+	addPoint: function(point, index){
+		prune.points.marker.splice(index, 0, point);
+		prune.points.count++;
+		//point.setMap(prune.map);
+		var path = prune.points.polyline.getPath();
+		path.insertAt(index, point.getCenter());
+		
+		
+		//prune.addChartPoint(point, index);
+	},
+	addRange: function(range, index){
+		prune.points.marker.splice(index, 0, range);
+		for (var i = 0; i < range.length; i++)
+			range[i].setMap(prune.map);
+			
+		var path = prune.points.polyline.getPath();
+		
+		for (var i = 0; i < range.length; i++)
+			path.insertAt(index + i, point.getCenter());
+		
+		prune.updateChart();
+	},
+	selectIdx: function(index){
+		prune.select(prune.points.marker[index]);
+	},
+	select: function(point, add){
+		if (!point || (point && point.selected))
+			return;
+		// deselect old marker
+		if (!add)
+			prune.deselectAll();
+			
+		prune.cSelect.range.push(point);
+				
+		point.setOptions({
+			'fillColor': prune.color.selected 
+		});
+		point.selected = true;
+		prune.cSelect.focus = point;
+		
+		prune.addChartLine(prune.points.marker.indexOf(point));
+
+		if(prune.propagateEvents && typeof prune.onSelect == 'function')
+			prune.onSelect();
+	},
+	selectNext: function(steps){
+		var next;
+		if (!prune.cSelect.focus)
+			return null;
+		
+		if (!steps)
+			steps = 1;		
+		
+		for (var i = 0; i < prune.points.count; i++){
+			if (prune.cSelect.focus == prune.points.marker[i]){
+				if (i == 0 && steps < 0)
+					return prune.cSelect.focus;
+				if (i == (prune.points.count - 1) && steps > 0)
+					return prune.cSelect.focus
+				else
+					next = prune.points.marker[i+steps];
+				prune.select(next);
+				prune.center(next);
+				return next;
+			}
+		}
+		if (steps > 0)
+			next = prune.points.marker[prune.points.count -1];
+		else
+			next = prune.points.marker[0];
+		prune.select(next);
+		prune.center(next);
+		return next;
+	},
+	deselect: function(point){
+		if (!point.selected)
+			return false;
+			
+		// remove from focus
+		if (prune.cSelect.focus && prune.cSelect.focus == point){
+			prune.cSelect.focus = null;
+		}
+		
+		// remove from select buffer
+		var count = prune.cSelect.range.length;
+		for (var i = prune.cSelect.range.length - 1; i >= 0; i--){
+			if (point == prune.cSelect.range[i])
+				prune.cSelect.range.splice(i, 1);
+		}	
+		
+		// restor point
+		point.setOptions({
+			'fillColor': prune.color.unselected		
+		});
+		point.selected = null;
+
+		if(prune.propagateEvents && typeof prune.onDeselect == 'function')
+			prune.onDeselect();
+	},
+	selectRangeIdx: function(fromIdx, toIdx){
+		prune.selectRange(prune.points.marker[fromIdx], prune.points.marker[toIdx]);
+	},
+	selectRange: function(from, to, add){
+		if (!add){
+			prune.deselectAll();
+			prune.cSelect.range = [];
+		}
+		var low = null;
+		var high = null;
+		var lowIdx = null;
+		for (var i = 0; i <= prune.points.count; i++){
+			if (!low){
+				if(prune.points.marker[i] == from){
+					low = from;
+					high = to;
+					lowIdx = i;
+				}
+				else if(prune.points.marker[i] == to){
+					low = to;
+					high = from;
+					lowIdx = i;
+				}
+			}
+			
+			if (low){
+				if (!prune.points.marker[i].selected){					
+					prune.points.marker[i].selected = true;
+					prune.points.marker[i].setOptions({
+						'fillColor': prune.color.selected 
+					});
+					prune.cSelect.range.push(prune.points.marker[i]);
+				}
+				
+				if (prune.points.marker[i] == high){
+					prune.addChartBand(lowIdx, i);
+					break; 
+				}
+			}
+		}
+		prune.cSelect.focus = to;
+		
+		if(typeof prune.onSelect == 'function')
+				prune.onSelect();
+	},
+	selectAll: function(){
+		prune.stopEvents();	
+	
+		prune.select(prune.points.marker[0])
+		for(var i = 1; i < prune.points.count; i++){
+			prune.select(prune.points.marker[i], true);
+		}
+		if(typeof prune.onSelect == 'function')
+				prune.onSelect();
+	},
+	deselectAll: function(){
+		prune.stopEvents();
+		for(var i = prune.cSelect.range.length-1; i >= 0; i--){
+			prune.deselect(prune.cSelect.range[i]);		
+		}
+		prune.clearChartBand();
+		prune.clearChartLine();
+		
+		prune.enableEvents();
+		if(prune.propagateEvents && typeof prune.onDeselect == 'function')
+				prune.onDeselect();
+	},
+	rad: function(deg) {
+		return deg*Math.PI/180;
+	},
+	R: 6367445,
+	distance: function(p1, p2) {
+		var dLat  = prune.rad(p2.lat() - p1.lat());
+		var dLong = prune.rad(p2.lng() - p1.lng());
+		
+		var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+			Math.cos(prune.rad(p1.lat())) * Math.cos(prune.rad(p2.lat())) * Math.sin(dLong/2) * Math.sin(dLong/2);
+		var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+		var d = prune.R * c;
+
+		return d.toFixed(3);
+	},
+	eleChange: function(range){
+		if (!range)
+			range = prune.cSelect.range;
+			
+		var count = range.length;
+		var result = {};
+		result.climb = 0;
+		result.descent = 0;
+		result.highest = -10000000;
+		result.lowest = 10000000;
+		var last = range[0].ele;
+		for(var i = 1; i < count; i++){
+			if (range[i].ele > last)
+				result.climb = result.climb + (range[i].ele - last);
+			else
+				result.descent = result.descent + (last - range[i].ele);
+
+			if(result.highest < range[i].ele)
+				result.highest = range[i].ele;
+			if (result.lowest > range[i].ele)
+				result.lowest = range[i].ele;
+				
+			last = range[i].ele;
+		}
+		return result;
+	},
+	compress: function(distance){
+		if (!distance)
+			throw "CompressDistanceNotSet";
+		
+		prune.stopEvents();
+		prune.deselectAll();
+		
+		if (!distance)
+			distance = 1;
+		if (typeof distance == "string")
+			distance = parseFloat(distance);
+			
+		var current = prune.points.marker[0];
+		for (var i = 1; i < prune.points.count-1; i++){
+			if (prune.distance(current.getCenter(), prune.points.marker[i].getCenter()) < distance)
+				prune.select(prune.points.marker[i], true);
+			else
+				current = prune.points.marker[i];
+		}
+		if (prune.distance(prune.points.marker[prune.points.count-2].getCenter(), prune.points.marker[prune.points.count-1].getCenter()) < distance)
+			prune.select(prune.points.marker[prune.points.count-2], true);
+						
+		prune.enableEvents();
+		if(prune.propagateEvents && typeof prune.onDeselect == 'function')
+				prune.onDeselect();
+		/*		
+		new Message({
+	   	iconPath: "/images/",
+	   	icon: "okMedium.png",
+	   	title: "Compression complte",
+	   	message:  prune.cSelect.range.length + ' points selected'
+   	}).say();
+		*/
+		return prune.cSelect.range.length;
+	},
+	center: function(point, force){
+		if (force)
+			prune.map.panTo(point.getCenter());	
+		else if (prune.map.getBounds().contains(point.getCenter()) == false){
+			prune.map.panTo(point.getCenter());
+		}
+	},
+	// messaging
+	dlgError: function(errorMsg, options){
+		defaults = {
+			loadMethod: 'html',
+			closeAfter: 1500,
+			type: 'notification',
+			addClass: 'notification',
+			content: errorMsg,
+			width: 220,
+			height: 40,
+			y: 53,
+			padding:  { top: 10, right: 12, bottom: 10, left: 12 },
+			shadowBlur: 5	
+		};
+		options = (options) ? options : {};
+		$extend(defaults, options);
+		
+		new MUI.Window(defaults);
+
+		//MochaUI.notification(errorMsg);
+	},
+	// graphing
+	chartLineCount: 0,
+	addChartLine: function(idx){
+		prune.chart.xAxis[0].addPlotLine({
+			value: idx,
+			color: '#ff3300',
+			width: 2,
+			id: 'chartLine'
+		});
+		prune.chartLineCount++;
+	},
+	clearChartLine: function(){
+		if (!prune.chart.xAxis)
+			return false;
+			
+		prune.chart.xAxis[0].removePlotLine('chartLine', true);
+		return true;
+	},
+	addChartBand: function(fromIdx, toIdx){
+		if (!prune.chart.xAxis)
+			return false;
+			
+		prune.chart.xAxis[0].addPlotBand({
+			from: fromIdx,
+			to: toIdx,
+			color: '#3399cc',
+			id: 'chartBand'
+		});
+		return true;
+	},
+	clearChartBand: function(){
+		if (!prune.chart.xAxis)
+			return false;
+			
+		prune.chart.xAxis[0].removePlotBand('chartBand');
+		return true;
+	},
+	removeChartPoint: function(idx, noRedraw){
+		var redraw = true;
+		if (noRedraw)
+			redraw = false;
+		//prune.chart.series[0].setData(prune
+		prune.chart.series[0].data[idx].update(null);
+	},
+	updateChart: function(){
+		var data = [];
+		for (var i = 0; i < prune.points.count; i++){
+			data.push(prune.points.marker[i].ele || 0);
+		}
+		prune.chart.series[0].setData(data);
+	},
+	addChartPoint: function(point, index){
+		prune.chart.series[0].addPoint({
+			x: index,
+			y: point.ele
+		});
+	},
+	chart: function(id, parent){
+		//var chart;
+		
+		var dataArray = [];
+		var markers = prune.points.marker;
+		var count = markers.length;
+		for (var i = 0; i < count; i++){
+			dataArray.push(markers[i].ele || 0);
+		}
+		var chartWidth = parseInt($(parent).getStyle('width'));
+
+
+		prune.chart = new Highcharts.Chart({
+	      chart: {
+	         renderTo: id, 
+	         defaultSeriesType: 'area',
+	         width: chartWidth,
+	         //inverted: true,
+	         height: 220,
+	         events: {
+	      		click: function(event){
+	      			prune.selectIdx(Math.round(event.xAxis[0].value));
+	      		},
+	      		selection: function(event) {
+	      			event.preventDefault();
+	      			prune.selectRangeIdx(Math.round(event.xAxis[0].min), Math.round(event.xAxis[0].max));
+            	}
+	      	},
+	      	zoomType: 'x',
+	         margin: [20, 10, 35, 40] //top, right, bottom, left
+	      },
+	      title:{
+	      	text: null
+	      },
+	      xAxis: {
+	      	labels: {
+	      		enabled: false
+	      	}
+	      },
+	      yAxis: {
+	         labels: {
+	            formatter: function() {
+	               return this.value + 'm';
+	            }
+	         }
+	      },
+	      plotOptions: {
+         	area: {
+         		animation: false,
+         		allowPointSelect: false,
+         		//stickyTracking: false,
+         		threshold: -100000,
+         		events: {
+         			click: function(event){
+		      			prune.selectIdx(prune.selectIdx(event.point.x));
+         			}
+         		},
+            	marker: {
+               	enabled: false,
+	               symbol: 'circle',
+	               radius: 2,
+	               states: {
+	                  hover: {
+	                  	//radius: 10,
+	                     enabled: true
+	                  }/*
+	                  select: {
+	                  	enabled: true,
+	                  	radius: 10
+	                  }*/
+	               }
+	            }
+         	}
+      	},
+      	tooltip: {
+	         formatter: function() {
+	            return 'Altitude: ' + Highcharts.numberFormat(this.y, 0, null, ' ') + 'm';
+	         }
+	      },
+	      legend:{
+	      	enabled: false
+	      },
+	      series: [{
+	         name: 'Altitude',
+	         color: '#177245',
+	         data: dataArray
+	      }]
+	   });
+	},
+	graph: function(id, parent){
+		if (!google.visualization){
+			google.load("visualization", "1", {packages:["areachart"], 'callback': function(){
+				prune.graph(id, parent); 
+			}});
+			return;
+		}
+		
+	
+		var data = new google.visualization.DataTable();
+		//data.addColumn('number', 'Distance');
+		data.addColumn('number', 'Elevation');
+		
+		var markers = prune.points.marker;
+		var dataArray = [];
+		var count = markers.length;
+		for (var i = 0; i < count; i++){
+			dataArray.push([markers[i].ele]);
+		}
+		data.addRows(dataArray);
+
+		chart = new google.visualization.AreaChart(document.getElementById(id));
+		var test = parseInt($(parent).getStyle('width'));
+		
+		chart.draw(data, {
+			width: parseInt($(parent).getStyle('width')), //684 
+			height: 200, 
+			pointSize: 0, 
+			//min: min,
+			//axisFontSize: 12,
+			legend: 'none',
+			colors: ['#177245'],
+			//title: title,
+			titleY: '(m)',
+			//titleY: titleY
+		});
+
+	},
+	// TODO: implement independent save function for prune
+	save: function(){},
+	// TODO: implement independent export function for prune
+	export: function(){},
+	// events
+	stopEvents: function(){
+		prune.eventStops++;
+		prune.propagateEvents = false;
+	},
+	enableEvents: function(){
+		if (prune.eventStops > 0){
+			prune.eventStops--;
+			if (prune.eventStops == 0)
+				prune.propagateEvents = true;
+		}	
+	},
+	eventStops: 0,
+	propagateEvents: true,
+	onLoad: null,
+	onSelect: null,
+	onDeselect: null,
+	onUndo: null,
+	onViewChange: null,
+	onPtEdit: null
+}
+
+
+function MapOverlay(map) { 
+	this.setMap(map); 
+}
+MapOverlay.prototype = new google.maps.OverlayView();
+MapOverlay.prototype.onAdd = function() { };
+MapOverlay.prototype.onRemove = function() { };
+MapOverlay.prototype.draw = function() { };
+
+
+/*
+var MapOverlay = {
+	init: function(map){
+		this.setMap(map); 
+	},
+	onAdd: function() { },
+	onRemove: function() { },
+	draw: function() { }
+};
+
+MapOverlay.init.bind(google.maps.OverlayView));
+*/

@@ -1,0 +1,28 @@
+<p>
+Set the amount of offset that should be applied to the selected points.
+</p>
+
+<form id="eleOffsetForm" action="#">
+<p>Altitude offset: <input style="text-align: right;" type="text" size="24" name="meters" value="0">m</p>
+<input class="right" type="submit" name="ok" value="Ok"/>
+<input class="right" id="btnCancel" type="button" name="cancel" value="Cancel"/>
+</form>
+<script type="text/javascript">
+prune.keyboard.deactivate();
+$('eleOffsetForm').addEvent('submit', function(event){
+	event.stop();
+	if (prune.cSelect.range && prune.cSelect.range.length > 0)
+		prune.altitudeOffset(prune.cSelect.range, $('eleOffsetForm').meters.value);
+	else
+		prune.altitudeOffset(prune.points.marker, $('eleOffsetForm').meters.value);
+		
+	MochaUI.closeWindow($('eleOffset'));
+	prune.keyboard.activate();
+});
+
+$('btnCancel').addEvent('click', function(event){
+	event.stop();
+	MochaUI.closeWindow($('eleOffset'));
+	prune.keyboard.activate();
+});
+</script>

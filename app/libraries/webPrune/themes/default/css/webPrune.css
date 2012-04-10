@@ -1,0 +1,119 @@
+#map_canvas #contextmenu{
+	padding:0px; 
+	display: block;
+	visibility: hidden;
+	background:#ffffff;
+	border:1px solid #8888FF;
+	z-index: 10;
+	position: relative;
+	width: 140px;
+	margin: 0px;
+}
+
+#map_canvas #contextmenu li{
+	margin:0; 
+	padding:0;
+	list-style-image: none;
+	list-style: none;
+}
+
+#contextmenu li a { 
+	display:block; 
+	padding:1px 5px 1px 35px; 
+	font-size:12px; 
+	text-decoration:none; 
+	font-family:tahoma,arial,sans-serif; 
+	color:#000; 
+	background-position:8px 8px; 
+	background-repeat:no-repeat; 
+	width: 100px;
+}
+
+#contextmenu li a:hover { 
+	background-color: #c2cff1;  
+}
+
+ul.infoList{
+	list-style-type: none;
+	list-style-position: outside;
+	margin-left: 3px;
+	font-weight: bold;
+}
+ul.infoList span{
+	font-weight: normal;
+}
+
+.right {
+	float: right
+}
+
+h2.help {
+	border-bottom: 1px solid;
+	padding-bottom: 0px;
+	margin-bottom: 8px;
+}
+
+#keyboardHelp p{
+	padding-bottom: 1px;
+}
+
+/* header menu */
+#topNav ul {
+	font: bolder 1.3em 'Trebuchet MS', sans-serif;
+	color: #FFF;
+	list-style: none;
+	margin: 0; padding: 0;		
+}
+#topNav li {
+	display: inline;
+	margin: 0px
+}
+#topNav li a {
+	float: left;
+	display: block;
+	padding: 3px 12px;	
+	color: #FFF;
+	background-color: #333;
+	text-decoration: none;
+	border-right: 1px solid #272727;
+}
+#topNav li a:hover {
+	background: #65944A;
+	color: #FFF;
+}
+#topNav li a#current  {
+	background: #65944A;
+	color: #FFF;
+}
+
+/********/
+.hide{
+	display: none !important;
+}
+
+.saveForm{
+	float: right;
+}
+
+.saveForm input[type="radio"] {
+	margin-right: 2px;
+	margin-left: 5px;
+}
+
+.button + .button {
+	margin-left: 5px;
+	margin-right: 5px;
+}
+
+#formInfo {
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  line-height: 26px;
+  padding: 0;
+
+}
+
+.red {
+	color: red; !important
+}	

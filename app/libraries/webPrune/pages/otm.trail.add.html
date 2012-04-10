@@ -1,0 +1,41 @@
+<p id="formInfo">
+Add this trail to the mapping service at opentrailmap.net
+</p>
+
+<form id="otmAddTrailForm" action="#">
+	<input type="hidden" name="MAX_FILE_SIZE" value="400000" />		
+	<p>
+		<label>Namn</label><br/>
+		<input name="trailname" class="input" value="" type="text" size="30" />
+	</p>
+	<p>
+		<label>Beskrivning</label><br/>
+		<textarea class="input" name="traildescription" rows="5" cols="25"></textarea>
+	</p>
+	<p>
+		<label>Typ</label><br/>
+		<input class="group" id="r_mtb" name="type[]" type="checkbox"  value="MTB" />
+		<label class="group" for="r_mtb">MTB</label>
+		<input class="group" id="r_foot" name="type[]" type="checkbox"  value="Foot" />
+		<label class="group" for="r_foot">Vandring</label>
+	</p>
+
+	<p>
+		<label>Gradering</label><br/>
+		<input id="r_green" name="grade" type="radio" value="1" />
+	
+		<label class="group" for="r_green">grön</label>
+		<input id="r_blue" name="grade" type="radio" value="2" />
+		<label class="group" for="r_blue">blå</label>
+		<input id="r_red" name="grade" type="radio" value="3" />
+		<label class="group" for="r_red">Röd</label>
+		<input id="r_black" name="grade" type="radio" value="4" />
+		<label class="group" for="r_black">Svart	</label>
+
+	</p>
+	
+	<div class="buttonRow">
+		<input class="button right" type="submit" name="ok" value="Upload"/>
+		<input class="button right" id="btnCancel" type="button" name="cancel" value="Cancel"/>
+	</div>
+</form>

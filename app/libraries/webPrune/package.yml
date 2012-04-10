@@ -1,0 +1,23 @@
+name: "WebPrune"
+
+version: "0.2-dev"
+
+exports: "webprune.js"
+
+web: "[opentrialmap.net/webprune](http://opentrailmap.net/webprune/)"
+
+description: "WebPrune, a web based GPS file editor"
+
+license: "GPLv3"
+
+copyright: "&copy; Nils Lagerkvist"
+
+authors:
+  - "Nils Lagerkvist"
+
+sources:
+  - "scripts/mocha.js"
+  - "scripts/prune-core.js"
+  - "scripts/prune-ui.js"
+  - "scripts/prune-otm.js"
+  - "scripts/prune-challange.js"

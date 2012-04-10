@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta http-equiv="X-UA-Compatible" content="chrome=1" />
+
+	<title>webPrune</title>
+	<meta name="description" content="A browser based GPX editor." />
+
+	<link rel="stylesheet" type="text/css" href="themes/default/css/Content.css" />
+	<link rel="stylesheet" type="text/css" href="themes/default/css/Core.css" />
+	<link rel="stylesheet" type="text/css" href="themes/default/css/Layout.css" />
+	<link rel="stylesheet" type="text/css" href="themes/default/css/Dock.css" />
+	<link rel="stylesheet" type="text/css" href="themes/default/css/Window.css" />
+	<link rel="stylesheet" type="text/css" href="themes/default/css/Tabs.css" />
+	<link rel="stylesheet" type="text/css" href="themes/default/css/webPrune.css" />
+
+	<!--[if lt IE 9]>
+		<script type="text/javascript" src="scripts/excanvas_r43.js"></script>
+	<![endif]-->
+	
+    <script type="text/javascript" src="/js/mootools-1.4.2.js"></script>
+    <script type="text/javascript" src="/js/opentrailmap.js" ></script>
+    <script type="text/javascript" src="http://www.google.com/jsapi?autoload={'modules':[{name:'maps',version:3,other_params:'libraries=geometry%26sensor=false'}]}"></script>
+    <script type="text/javascript" src="scripts/mocha.js"></script>
+    <script type="text/javascript" src="scripts/prune-core.js"></script>
+	<script type="text/javascript" src="scripts/prune-ui.js"></script>
+    <script type="text/javascript" src="scripts/prune-otm.js"></script>
+    <script type="text/javascript" src="scripts/prune-challange.js"></script>
+    <script type="text/javascript" src="/js/highcharts/adapters/mootools-adapter.src.js" ></script>
+    <script type="text/javascript" src="/js/highcharts/highcharts.src.js" ></script>
+    
+</head>
+<body>
+
+<div id="desktop">
+
+	<div id="desktopHeader">
+		<div id="desktopTitlebarWrapper">
+			<div id="desktopTitlebar">
+				<h1 id="logo"><a href="/">open<span class="grey">trailmap</span></a></h1>
+				<div id="topNav">
+					<ul class="menu-right">
+						<li><a href="/viewtrails" >Stigar</a></li>
+						<li><a href="/trailupload" >Bidra</a></li>
+						<li><a href="/mytrails" >Mina stigar</a></li>
+						<li><a href="/about" >Om</a></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	
+		<div id="desktopNavbar">	
+			<ul id="desktopMenu">
+				<li><a class="returnFalse" href="">File</a>	
+					<ul id="wmFile">
+						<li><a class="menu disabled" id="wmOpen" href="#">Open...</a></li>				
+						<li><a class="menu disabled" id="wmSave" href="#">Save</a></li>
+						<li><a class="menu" id="wmExportGpx" href="#">Export to GPX...</a></li>		
+						<li><a class="menu" id="wmAddTrail" href="#">Upload track to opentrailmap...</a></li>										
+						<li class="divider""><a class="menu" id="wmExit" href="#">Exit</a></li>				
+					</ul>
+				</li>
+				<li><a class="returnFalse" href="">Edit</a>	
+					<ul id="wmEdit">
+						<li><a class="menu" id="wmUndo" href="#">Undo</a></li>				
+						<li><a class="menu" id="wmUndoAll" href="#">Undo all</a></li>
+						<li class="divider"><a class="menu" id="wmDelete" href="#">Delete</a></li>
+						<li><a class="menu" id="wmEleOffset" href="#">Altitude offset...</a></li>
+						<li><a class="menu" id="wmCompress" href="#">Compress...</a></li>
+						<li><a class="menu" id="wmReverse" href="#">Reverse track</a></li>
+						<li><a class="menu" id="wmEleAdjust" href="#">Auto adjust elevation</a></li>													
+					</ul>
+				</li>
+				<li><a class="returnFalse" href="">View</a>
+					<ul id="wmView">
+						<li><a class="menu" id="wmZoomSelected" href="#">Zoom selected</a></li>						
+						<li><a class="menu" id="wmZoomAll" href="#">Zoom all</a></li>
+						<li><a class="menu" id="wmTrails" href="#">View surrounding trails</a></li>										
+					</ul>
+				</li>
+				<li id="challenge" class="hide"><a class="returnFalse" href="">Challange</a>	
+					<ul id="wmChallenge">
+						<li><a class="menu" id="wmAddGate" href="#">Add gate</a></li>
+						<li><a class="menu" id="wmAutoAddGates" href="#">Auto add gates</a></li>
+						<li><a class="menu" id="wmSaveChallenge" href="#">Save challenge</a></li>						
+						<li><a class="menu" id="wmChallengeHelp" href="#">Help</a></li>				
+					</ul>
+				</li>				
+				<li><a class="returnFalse" href="">Help</a>	
+					<ul>
+						<li><a class="menu" href="#" id="wmHelp" >webPrune Help</a></li>
+						<li><a class="menu" href="#" id="wmKeyboard" >Keyboard Shortcuts</a></li>
+						<li class="divider"><a class="menu" href="#" id="wmAbout">About</a></li>				
+					</ul>
+				</li>
+			</ul>
+			
+				
+			<div class="toolbox divider">
+				<div id="spinnerWrapper"><div id="spinner"></div></div>		
+			</div>
+
+
+
+		</div><!-- desktopNavbar end -->
+	</div><!-- desktopHeader end -->
+
+	
+	<div id="dockWrapper">
+		<div id="dock">
+			<div id="dockPlacement"></div>
+			<div id="dockAutoHide"></div>
+			<div id="dockSort"><div id="dockClear" class="clear"></div></div>			
+		</div>
+	</div>
+	
+	
+	<div id="pageWrapper"></div>
+	<!-- remove footer
+	<div id="desktopFooterWrapper">
+		<div id="desktopFooter">			
+			&copy; 2007-2009 <a target="_blank" href="http://greghoustondesign.com/">Greg Houston</a> - <a id="licenseLink" href="license.html">MIT License</a>
+		</div>
+	</div>
+	-->
+</div><!-- desktop end -->
+
+</body>
+</html>
