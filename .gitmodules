@@ -19,9 +19,15 @@
 [submodule "app/libraries/js/more-behaviors"]
 	path = app/libraries/js/more-behaviors
 	url = https://github.com/anutron/more-behaviors.git
-[submodule "app/libraries/js/packager"]
-	path = app/libraries/js/packager
-	url = https://github.com/kamicane/packager.git
 [submodule "app/libraries/js/simplemodal"]
 	path = app/libraries/js/simplemodal
 	url = git@github.com:otm/simplemodal.git
+[submodule "app/libraries/js/clientcide"]
+	path = app/libraries/js/clientcide
+	url = https://github.com/anutron/clientcide.git
+[submodule "app/libraries/js/mochaui"]
+	path = app/libraries/js/mochaui
+	url = git@github.com:otm/mochaui.git
+[submodule "app/libraries/js/packager"]
+	path = app/libraries/js/packager
+	url = git@github.com:otm/packager.git
