@@ -11,6 +11,8 @@
  * it intercepts any writes where the `'expires'` key is set in the options array.
  * The default name is based on the lithium app path. Remember, if your app is numeric or has
  * special characters you might want to use Inflector::slug() or set this manually.
+ *
+ * 'default' => array('adapter' => 'Php', 'session.name' => Inflector::slug(basename(LITHIUM_APP_PATH)))
  */
 use lithium\storage\Session;
 

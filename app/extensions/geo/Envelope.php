@@ -6,7 +6,7 @@ use Exception;
 
 // IteratorAggregate interface with the getIterator()
 class Envelope{
-	protected $pointClass = 'app\extensions\point';
+	protected $pointClass = 'app\extensions\geo\point';
 	public $sw = null;
 	public $ne = null;
 	

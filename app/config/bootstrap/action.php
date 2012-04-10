@@ -22,7 +22,6 @@ use lithium\core\Environment;
 use lithium\action\Dispatcher;
 
 Environment::is(function(){
-    $production = array();
     $staging    = array('stage.opentrailmap.net', 'dev1234.opentrailmap.net');
     $local      = array('192.168.0.14', 'localhost', 'dev.opentrailmap.net', 'li3.opentrailmap.net');
 

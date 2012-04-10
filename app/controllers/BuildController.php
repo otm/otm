@@ -2,7 +2,9 @@
 
 namespace app\controllers;
 
-//require('build/packager/packager.php');
+use packager\Packager;
+
+//require('app/libraries/js/packager/packager.php');
 
 class BuildController extends \lithium\action\Controller {
 
@@ -20,10 +22,10 @@ class BuildController extends \lithium\action\Controller {
 		}
 
 		switch ($this->request->file) {
-			case 'opentrailmap':
+			case 'opentrailmap.js':
 				$pkg = new Packager(array(
-					'js/otm/',
-					'build/simplemodal/'	
+					'../../app/libraries/js/otm/',
+					'../../app/libraries/js/simplemodal/'	
 				));
 				$all = $pkg->get_all_files('OpenTrailmap');
 				header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1

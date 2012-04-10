@@ -36,7 +36,7 @@ class Trail extends \lithium\data\Model {
 				'swlng' => array('<' => $envelope->ne->lng),
 				'nelng' => array('>' => $envelope->sw->lng)
 			),
-			'limit' => 10
+			'limit' => 100
 		));
 	}
 	 

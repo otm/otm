@@ -21,15 +21,28 @@
  * return $posts->to('json');
  * }}}
  */
+use lithium\net\http\Media;
 use lithium\util\Collection;
 
-Collection::formats('lithium\net\http\Media');
+Collection::formats('lithium\net\http\Media');	
 
 Media::type('gpx', 'application/text', array(
 	'view' => 'lithium\template\View', 
 	'layout' => false,
 	'template' => false
 ));
+
+Media::type('less', 'stylesheet/less');
+
+Media::assets('less', array(
+	'suffix' => 'less',
+	'filter' => 'null',
+	'path' => array(
+		'{:base}/{:library}/less/{:path}' => array('base', 'library', 'path'),
+		'{:base}/less/{:path}' => array('base', 'path') 
+	)
+));
+
 
 /**
  * This filter is a convenience method which allows you to automatically route requests for static

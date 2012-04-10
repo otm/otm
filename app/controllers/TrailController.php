@@ -25,12 +25,6 @@ class TrailController extends \lithium\action\Controller {
 			'layout' => null,
 			'template' => null
 		));
-		Media::type('gpx', 'application/text', array(
-			'view' => 'lithium\template\View', 
-			'layout' => false,
-			'template' => false
-		));
-	
 		$trail = Trail::find('first', array(
 			'condition' => array('id' => $this->request->id),
 			'with' => array('User')
@@ -50,12 +44,13 @@ class TrailController extends \lithium\action\Controller {
 		$nepoint = new Point($this->request->query['nelat'], $this->request->query['nelng']);
 		$envelope = new Envelope($swpoint, $nepoint);
 		$trails = Trail::inEnvelope($envelope);
-		
-		$trails->each(function($ent){
+		$count = 0;
+		$trails->each(function($ent) use (&$count){
+			$count++;
 			$ent->polyline = json_decode($ent->polyline);
 			return $ent;
 		});
-		return compact('trails');
+		return compact('count', 'trails');
 	}
 
 

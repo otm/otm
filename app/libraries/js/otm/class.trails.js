@@ -112,10 +112,9 @@ var Trails = new Class({
 		var envelope = this.map.getBounds();		
 		
 		new Request.JSON({
-			url: otm.url.rpc, 
+			url: '/trail/find.json', 
 			onSuccess: this.callback.bind(this),
 			data: {
-				'call': this.call, 
 				'swlat': envelope.getSouthWest().lat(), 
 				'swlng': envelope.getSouthWest().lng(),
 				'nelat': envelope.getNorthEast().lat(), 
@@ -126,8 +125,6 @@ var Trails = new Class({
 	},
 	
 	drawTrails: function(response){
-		if (response.code == 0)
-			return;
 		
 		// Mark all polylines to be unlinked
 		for (var i in this.polylines){
@@ -138,14 +135,14 @@ var Trails = new Class({
 			this.markers[i].unlink = 1;
 		}
 
-		for (var i = 0; i < response.count; i++){
+		Object.each(response.trails, function(el, i){
 			var trail;
 			
-			if (this.options.exclude.indexOf(Number(response.trails[i].trailId)) != -1)
-				continue;
+			if (this.options.exclude.indexOf(Number(response.trails[i].id)) != -1)
+				return;
 				
-			if (this.polylines && this.polylines[response.trails[i].trailId]) // Excisting trail
-				delete(this.polylines[response.trails[i].trailId].unlink);
+			if (this.polylines && this.polylines[response.trails[i].id]) // Excisting trail
+				delete(this.polylines[response.trails[i].id].unlink);
 			else{	// new trail
 				trail = otm.drawTrail(response.trails[i].polyline, {
 					map: this.map,
@@ -154,32 +151,32 @@ var Trails = new Class({
 				});
 
 				trail.trail = 1;
-				trail.trailId = response.trails[i].trailId;
+				trail.id = response.trails[i].id;
 				trail.name = response.trails[i].name;
 				trail.grade = response.trails[i].grade;
 				trail.length = response.trails[i].distance;
-				this.polylines[trail.trailId] = trail;
+				this.polylines[trail.id] = trail;
 				
 				this.fireEvent('onDrawTrail', [trail]);
 			}
-		}
+		}, this);
 		
 		// TODO: Add this as function
 		// Remove trails that are not visable
-		this.polylines.each(function(trail, trailId, polylines){
+		this.polylines.each(function(trail, id, polylines){
 			if (trail.unlink && trail.unlink == 1){
 				this.fireEvent('onUnlinkTrail', [trail]);
 				trail.setMap(null);
-				delete(polylines[trailId]);
+				delete(polylines[id]);
 			}
 		}.bind(this));
 		
 		// Remove markers that are not visable
-		this.markers.each(function(trail, trailId, markers){
+		this.markers.each(function(trail, id, markers){
 			if (trail.unlink && trail.unlink == 1){
 				this.fireEvent('onUnlinkMarker', [trail]);
 				trail.setMap(null);
-				delete(markers[trailId]);
+				delete(markers[id]);
 			}
 		}.bind(this));
 	},

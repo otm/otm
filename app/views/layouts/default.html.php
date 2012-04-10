@@ -1,22 +1,27 @@
 <?php
+
 use lithium\core\Environment;
+
 $envWarn = Environment::is('production')?'':' (' . Environment::get() . ')';
 ?>
 <!DOCTYPE html>
 <html lang="en">
   <head>
-	<?php echo $this->html->charset(); ?>
+	<?php echo $this->html->charset(), "\n"; ?>
 	<title><?php echo $this->title(), $envWarn; ?></title>
-	<?php echo $this->html->style(array('bootstrap', 'bootstrap-responsive')); ?>
-	<?php
-	if (Environment::is('development')) {  
-		echo $this->html->script('built.js'); 
-	}
-	else{
-		echo $this->html->script('built.js');
-	}
-	?>
-	<?php echo $this->html->script('opentrailmap.src.js'); ?>
+	<?php if (Environment::is('development')) { ?>
+		<link rel="stylesheet/less" type="text/css" href="/less/bootstrap.less" />
+		<link rel="stylesheet/less" type="text/css" href="/less/responsive.less" />
+		<?php echo $this->html->script('bootstrap.src.js'), "\n"; ?>
+		<?php echo $this->html->script('/build/js/opentrailmap.js'), "\n"; ?>
+		<?php echo $this->html->script('less-1.3.0.min.js'), "\n"; ?>
+
+	<?php } ?>
+	<?php if (!Environment::is('development')) { ?>
+		<?php echo $this->html->style(array('bootstrap', 'bootstrap-responsive')); ?>
+		<?php echo $this->html->script('bootstrap.src.js'); ?>
+		<?php echo $this->html->script('opentrailmap.src.js'); ?>
+	<?php } ?>
 	<?php echo $this->html->script('http://www.google.com/jsapi?key=ABQIAAAA3GD9b7sQbg_iv8CVdwFyYRS7GHhSvHXAquCqRAoDOuo0TckwYhRSyVfoaCp8E8vExDHiOLhXsIw6fA'); ?>
 	<?php echo $this->scripts(); ?>
 	<?php echo $this->html->link('Icon', null, array('type' => 'icon')); ?>
