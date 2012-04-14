@@ -5,6 +5,13 @@ Javascript and CSS is build automaticly in the development environment.
 Notice: If the page is in `dev` mode "(development)" is appended to the page title.
 The configuration of stage and development environment is done in `app/config/bootstrap/action.php`
 
+Managing Database Connections
+============================================================
+cd app/config/bootstrap
+cp connections.mock connections.php
+
+Setup user/password/database in the connections.php file
+
 Managing Submodules - Initializing 
 ============================================================
 To initialize submodules after cloning the project:
