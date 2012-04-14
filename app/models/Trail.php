@@ -8,6 +8,21 @@ class Trail extends \lithium\data\Model {
 		'User' => array('key' => array('uploader' => 'id'))
 	);
 
+	public function _init() {
+        parent::_init();
+
+       	$created = function($self, $params, $chain){
+			$entity = & $params['entity'];
+
+			if (!$entity->exists()){
+				$entity->created = date("Y-m-d H:i:s");
+			}
+			return $chain->next($self, $params, $chain);
+		}
+
+		//Trail::applyFilter('save', $created);
+    }
+
 	public static function inEnvelope($envelope) {
 		return Trail::find('all', array(
 			'fields' => array(
@@ -39,6 +54,7 @@ class Trail extends \lithium\data\Model {
 			'limit' => 100
 		));
 	}
+
 	 
 	public function getLength($entity, $metric = 'auto'){
 		if ($metric == 'auto'){
