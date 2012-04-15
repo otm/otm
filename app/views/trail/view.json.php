@@ -49,7 +49,7 @@
 	"updated": {
 		"date": "<?=$trail->lastUpdate?>",
 		"user": {
-			"id": <?=$trail->mod_user_id?>
+			"id": <?= $trail->mod_user_id?$trail->mod_user_id:$trail->uploader?>
 		}
 	}
 

@@ -31,8 +31,8 @@ class Trail extends \lithium\data\Model {
 				'name',
 				'description',
 				'grade',
-				/*
 				'distance',
+				/*
 				'distanceAscend',
 				'distanceDescend',
 				'descent',
