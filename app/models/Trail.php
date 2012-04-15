@@ -8,6 +8,7 @@ class Trail extends \lithium\data\Model {
 		'User' => array('key' => array('uploader' => 'id'))
 	);
 
+
 	public function _init() {
         parent::_init();
 
@@ -18,7 +19,7 @@ class Trail extends \lithium\data\Model {
 				$entity->created = date("Y-m-d H:i:s");
 			}
 			return $chain->next($self, $params, $chain);
-		}
+		};
 
 		//Trail::applyFilter('save', $created);
     }
