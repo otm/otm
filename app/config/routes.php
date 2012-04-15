@@ -30,9 +30,14 @@ use lithium\core\Environment;
 Router::connect('/', 'Pages::view');
 
 Router::connect('/map', 'Trail::index');
+
 Router::connect('/trail/find.{:type}', array('controller' => 'Trail', 'action' => 'envelope'));
 Router::connect('/trail/{:id:[0-9]+}.{:type}', 'Trail::view');
 Router::connect('/trail/{:id:[0-9]+}', 'Trail::view');
+
+Router::connect('/poi/find.{:type}', array('controller' => 'Poi', 'action' => 'envelope'));
+Router::connect('/poi/{:id:[0-9]+}.{:type}', 'Poi::view');
+Router::connect('/poi/{:id:[0-9]+}', 'Trail::view');
 
 /**
  * Connect the rest of `PagesController`'s URLs. This will route URLs like `/pages/about` to

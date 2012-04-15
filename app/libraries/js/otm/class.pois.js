@@ -70,10 +70,9 @@ var Pois = new Class({
 		var envelope = this.map.getBounds();		
 		
 		new Request.JSON({
-			url: otm.url.rpc, 
+			url: '/poi/find.json', 
 			onSuccess: this.callback.bind(this),
 			data: {
-				'call': this.call, 
 				'swlat': envelope.getSouthWest().lat(), 
 				'swlng': envelope.getSouthWest().lng(),
 				'nelat': envelope.getNorthEast().lat(), 
@@ -83,33 +82,31 @@ var Pois = new Class({
 		}).get();
 	},
 	
-	drawMarkers: function(response){
-		if (response.code == 0)
-			return;
-		
+	drawMarkers: function(response){		
 		// Mark all polylines to be unlinked
 		for (var i in this.markers){
 			this.markers[i].unlink = 1;
 		}
 
-		for (var i = 0; i < response.count; i++){
+		var count = response.pois.length;
+		for (var i = 0; i < count; i++){
 			var marker;
 			
-			if (this.options.exclude.indexOf(Number(response.poi[i].id)) != -1)
+			if (this.options.exclude.indexOf(Number(response.pois[i].id)) != -1)
 				continue;
 				
-			if (this.markers[response.poi[i].id]) // Excisting trail
-				delete(this.markers[response.poi[i].id].unlink);
+			if (this.markers[response.pois[i].id]) // Excisting trail
+				delete(this.markers[response.pois[i].id].unlink);
 			else{	// new trail
 				poi = new google.maps.Marker({
-			      position: new google.maps.LatLng(response.poi[i].lat, response.poi[i].lng),
-			      icon: otm.icons.poi.landmark,
-      			map: this.map
+			    	position: new google.maps.LatLng(response.pois[i].lat, response.pois[i].lng),
+			    	icon: otm.icons.poi.landmark,
+      				map: this.map
 				});   
 				poi.poi = 1;
-				poi.id = response.poi[i].id;
-				poi.name = response.poi[i].name;
-				poi.description = response.poi[i].description;
+				poi.id = response.pois[i].id;
+				poi.name = response.pois[i].name;
+				poi.description = response.pois[i].description;
 				this.markers[poi.id] = poi;
 
 				google.maps.event.addListener(poi, 'click', function(latlng){

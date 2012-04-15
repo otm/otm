@@ -25,10 +25,10 @@ provides: [otm-config]
 otm.url = {
 	rpc: '/rpc.php',
 	view: {
-		trails: '/viewtrails/',
-		trail: '/viewtrail/?id=',
+		trails: '/trail/envelope',
+		trail: '/trail/?id=',
 		training: '/viewtraining/?id=',
-		poi: '/poi/?id='
+		poi: '/poi/'
 	}
 };
 
@@ -38,21 +38,21 @@ otm.color = {
 };
 
 otm.icons = {
-	base: '/images/gIcons/',
+	base: '/img/map/',
 	grade: [
-		'/images/gIcons/cyclingmountainnotrated.png',
-		'/images/gIcons/cyclingmountain1.png', 
-		'/images/gIcons/cyclingmountain2.png', 
-		'/images/gIcons/cyclingmountain3.png', 
-		'/images/gIcons/cyclingmountain4.png'
+		'/img/map/cyclingmountainnotrated.png',
+		'/img/map/cyclingmountain1.png', 
+		'/img/map/cyclingmountain2.png', 
+		'/img/map/cyclingmountain3.png', 
+		'/img/map/cyclingmountain4.png'
 	],
-	numeric: '/images/gIcons/km/red',
-	finish: '/images/gIcons/finish.png',
-	high: '/images/gIcons/up.png',
-	low: '/images/gIcons/down.png',
-	trail: '/images/gIcons/smallRoundRed.png',
+	numeric: '/img/map/km/red',
+	finish: '/img/map/finish.png',
+	high: '/img/map/up.png',
+	low: '/img/map/down.png',
+	trail: '/img/map/smallRoundRed.png',
 	poi: {
-		landmark: '/images/gIcons/smallRoundRed.png'
+		landmark: '/img/map/smallRoundRed.png'
 	},
 	getNumeric: function(i){return otm.icons.numeric + i + '.png';}
 };
