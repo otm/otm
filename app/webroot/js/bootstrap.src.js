@@ -20879,7 +20879,7 @@ Bootstrap.Dropdown = new Class({
 	},
 
 	hideAll: function(){
-		var els = this.element.getElements('li.open').removeClass('open');
+		var els = this.element.getElements('.open').removeClass('open');
 		this.fireEvent('hide', els);
 		return this;
 	},
@@ -20901,11 +20901,14 @@ Bootstrap.Dropdown = new Class({
 
 	_handle: function(e){
 		var el = e.target;
-		var open = el.getParent('li.open');
+		var open = el.getParent('.open');
 		if (!el.match(this.options.ignore) || !open) this.hideAll();
-		if (this.element.contains(el) && (el.match('a.menu') || el.getParent('a.menu'))) {
-			e.preventDefault();
-			if (!open) this.show(el.getParent('li'));
+		if (this.element.contains(el)) {
+			var parent = el.match('.dropdown-toggle') ? el.getParent() : el.getParent('.dropdown-toggle');
+			if (parent) {
+				e.preventDefault();
+				if (!open) this.show(parent);
+			}
 		}
 	}
 });
@@ -20940,6 +20943,138 @@ Behavior.addGlobalFilters({
 
 /*
 ---
+description: Adds an instance of Form.Validator.Inline to any form with the class .form-validator.
+provides: [Behavior.FormValidator]
+requires: [Behavior/Behavior, More/Form.Validator.Inline, More/Object.Extras]
+script: Behavior.FormValidator.js
+name: Behavior.FormValidator
+...
+*/
+
+Behavior.addGlobalFilter('FormValidator', {
+	defaults: {
+		useTitles: true,
+		scrollToErrorsOnSubmit: true,
+		scrollToErrorsOnBlur: false,
+		scrollToErrorsOnChange: false,
+		ignoreHidden: true,
+		ignoreDisabled: true,
+		useTitles: false,
+		evaluateOnSubmit: true,
+		evaluateFieldsOnBlur: true,
+		evaluateFieldsOnChange: true,
+		serial: true,
+		stopOnFailure: true
+	},
+	setup: function(element, api) {
+		//instantiate the form validator
+		var validator = element.retrieve('validator');
+		if (!validator) {
+			validator = new Form.Validator.Inline(element, 
+				Object.cleanValues(
+					api.getAs({
+						useTitles: Boolean,
+						scrollToErrorsOnSubmit: Boolean,
+						scrollToErrorsOnBlur: Boolean,
+						scrollToErrorsOnChange: Boolean,
+						ignoreHidden: Boolean,
+						ignoreDisabled: Boolean,
+						useTitles: Boolean,
+						evaluateOnSubmit: Boolean,
+						evaluateFieldsOnBlur: Boolean,
+						evaluateFieldsOnChange: Boolean,
+						serial: Boolean,
+						stopOnFailure: Boolean
+					})
+				)
+			);
+		}
+		//if the api provides a getScroller method, which should return an instance of
+		//Fx.Scroll, use it instead
+		if (api.getScroller) {
+			validator.setOptions({
+				onShow: function(input, advice, className) {
+					api.getScroller().toElement(input);
+				},
+				scrollToErrorsOnSubmit: false
+			});
+		}
+		return validator;
+	}
+
+});
+
+/*
+---
+
+name: Behavior.BS.FormValidator
+
+description: Integrates FormValidator behavior into Bootstrap.
+
+license: MIT-style license.
+
+authors: [Aaron Newton]
+
+requires:
+ - More-Behaviors/Behavior.FormValidator
+
+provides: [Behavior.BS.FormValidator]
+
+...
+*/
+
+Behavior.addGlobalPlugin("FormValidator", "BS.FormValidator", {
+	setup: function(element, api, instance){
+		var original = {
+			showError: instance.showError,
+			hideError: instance.hideError
+		};
+		instance.setOptions({
+			showError: function(){},
+			hideError: function(){}
+		});
+		instance.warningPrefix = '';
+		instance.errorPrefix = '';
+		instance.addEvents({
+			showAdvice: function(field, advice, className){
+				var inputParent = field.getParent('.input'),
+				    clearfixParent = inputParent.getParent('.clearfix');
+				if (!inputParent || !clearfixParent){
+					original.showError(advice);
+				} else {
+					field.addClass('error');
+					var help = inputParent.getElement('div.advice');
+					if (!help){
+						inputParent.getElements('span.help-inline').setStyle('display', 'none');
+						help = new Element('span.help-inline.advice.auto-created', {
+							html: advice.get('html')
+						}).inject(inputParent);
+					}
+					help.removeClass('hide');
+					help.set('title', advice.get('html'));
+					clearfixParent.addClass('error');
+				}
+			},
+			hideAdvice: function(field, advice, className){
+				var inputParent = field.getParent('.input'),
+				    clearfixParent = inputParent.getParent('.clearfix');
+				if (!inputParent || !clearfixParent){
+					original.hideError(advice);
+				} else {
+					field.removeClass('error');
+					var help = inputParent.getElement('span.advice');
+					if (help.hasClass('auto-created')) help.destroy();
+					else help.set('html', '');
+					inputParent.getElements('span.help-inline').setStyle('display', '');
+					clearfixParent.removeClass('error');
+				}
+			}
+		});
+	}
+});
+
+/*
+---
 
 name: CSSEvents
 
@@ -20964,11 +21099,11 @@ Browser.Features.getCSSTransition = function(){
 	// set CSS transition event type
 	if ( Browser.Features.cssTransition ) {
 		Browser.Features.transitionEnd = "TransitionEnd";
-		if ( Browser.Engine.webkit ) {
+		if ( Browser.safari || Browser.chrome ) {
 			Browser.Features.transitionEnd = "webkitTransitionEnd";
-		} else if ( Browser.Engine.gecko ) {
+		} else if ( Browser.firefox ) {
 			Browser.Features.transitionEnd = "transitionend";
-		} else if ( Browser.Engine.presto ) {
+		} else if ( Browser.opera ) {
 			Browser.Features.transitionEnd = "oTransitionEnd";
 		}
 	}
@@ -20980,9 +21115,9 @@ window.addEvent("domready", Browser.Features.getCSSTransition);
 /*
 ---
 
-name: Bootstrap.Twipsy
+name: Bootstrap.Tooltip
 
-description: A simple tooltip implementation (twipsy) that works with the Twitter Bootstrap css framework.
+description: A simple tooltip implementation that works with the Twitter Bootstrap css framework.
 
 authors: [Aaron Newton]
 
@@ -20992,19 +21127,20 @@ requires:
  - /Bootstrap
  - /CSSEvents
  - More/Element.Position
+ - More/Element.Shortcuts
  - Behavior/Behavior
 
-provides: Bootstrap.Twipsy
+provides: [Bootstrap.Twipsy, Bootstrap.Tooltip]
 
 ...
 */
 
-Bootstrap.Twipsy = new Class({
+Bootstrap.Tooltip = Bootstrap.Twipsy = new Class({
 
 	Implements: [Options, Events],
 
 	options: {
-		location: 'above', //below, left, right
+		location: 'above', //below, left, right, bottom, top
 		animate: true,
 		delayIn: 200,
 		delayOut: 0,
@@ -21030,7 +21166,7 @@ Bootstrap.Twipsy = new Class({
 		this._makeTip();
 		var pos, edge, offset = {x: 0, y: 0};
 		switch(this.options.location){
-			case 'below':
+			case 'below': case 'bottom':
 				pos = 'centerBottom';
 				edge = 'centerTop';
 				offset.y = this.options.offset;
@@ -21083,10 +21219,13 @@ Bootstrap.Twipsy = new Class({
 
 	_makeTip: function(){
 		if (!this.tip){
-			this.tip = new Element('div.twipsy').addClass(this.options.location)
-				 .adopt(new Element('div.twipsy-arrow'))
+			var location = this.options.location;
+			if (location == 'above') location = 'top';    //bootstrap 2.0
+			if (location == 'below') location = 'bottom'; //bootstrap 2.0
+			this.tip = new Element('div.tooltip').addClass(location)
+				 .adopt(new Element('div.tooltip-arrow'))
 				 .adopt(
-				   new Element('div.twipsy-inner', {
+				   new Element('div.tooltip-inner', {
 				     html: this.options.override || this.options.getContent.apply(this, [this.element]) || this.options.fallback
 				   })
 				 );
@@ -21166,14 +21305,14 @@ Bootstrap.Twipsy = new Class({
 
 name: Bootstrap.Popover
 
-description: A simple tooltip (yet larger than twipsy) implementation that works with the Twitter Bootstrap css framework.
+description: A simple tooltip (yet larger than Bootstrap.Tooltip) implementation that works with the Twitter Bootstrap css framework.
 
 authors: [Aaron Newton]
 
 license: MIT-style license.
 
 requires:
- - /Bootstrap.Twipsy
+ - /Bootstrap.Tooltip
 
 provides: Bootstrap.Popover
 
@@ -21182,7 +21321,7 @@ provides: Bootstrap.Popover
 
 Bootstrap.Popover = new Class({
 
-	Extends: Bootstrap.Twipsy,
+	Extends: Bootstrap.Tooltip,
 
 	options: {
 		location: 'right',
@@ -21201,10 +21340,10 @@ Bootstrap.Popover = new Class({
 			this.tip = new Element('div.popover').addClass(this.options.location)
 				 .adopt(new Element('div.arrow'))
 				 .adopt(
-				   new Element('div.inner').adopt(
-				     new Element('h3.title', { html: this.options.getTitle.apply(this, [this.element]) || this.options.fallback })
+				   new Element('div.popover-inner').adopt(
+				     new Element('h3.popover-title', { html: this.options.getTitle.apply(this, [this.element]) || this.options.fallback })
 				   ).adopt(
-				     new Element('div.content').adopt(
+				     new Element('div.popover-content').adopt(
 				       new Element('p', { html: this.options.getContent.apply(this, [this.element])})
 				     )
 				   )
@@ -21403,10 +21542,12 @@ Bootstrap.Popup = new Class({
 		this.destroyed = true;
 	},
 
-	hide: function(event){
+	hide: function(event, clicked){
 		if (!this.visible || this.animating) return;
 		this.animating = true;
-		if (event) event.preventDefault();
+		if (event && clicked && clicked.hasClass('stopEvent')){
+			event.preventDefault();
+		}
 		document.id(document.body).removeEvent('click', this.bound.hide);
 		document.removeEvent('keyup', this.bound.keyMonitor);
 		this.element.removeEvent('click:relay(.close, .dismiss)', this.bound.hide);
@@ -21494,6 +21635,50 @@ Behavior.addGlobalFilters({
 				popup.show();
 			}
 			return popup;
+		}
+	}
+});
+
+/*
+---
+
+name: Behavior.BS.Popup.FormRequest
+
+description: Integrates FormRequest behavior into Popups.
+
+license: MIT-style license.
+
+authors: [Aaron Newton]
+
+requires:
+ - /Behavior.BS.Popup
+ - More/Form.Request
+
+provides: [Behavior.BS.Popup.FormRequest]
+
+...
+*/
+
+Behavior.addGlobalPlugin("FormRequest", "Popup.FormRequest", {
+	defaults: {
+		closeOnSuccess: true
+	},
+	setup: function(element, api, instance){
+		if (element.getParent('.modal')){
+			var dismissed;
+			var dismissals = element.getElements('input.dismiss, input.close').map(function(el){
+				return el.addEvent('click', function(){
+					dismissed = true;
+				}).removeClass('dismiss').removeClass('close');
+			});
+			instance.addEvents({
+				success: function(){
+					var formRequestAPI = new BehaviorAPI(element, 'formrequest');
+					if (formRequestAPI.getAs(Boolean, 'closeOnSuccess') !== false || api.get(Boolean, 'closeOnSuccess') !== false || dismissed){
+						element.getParent('.modal').getBehaviorResult('BS.Popup').hide();
+					}
+				}
+			});
 		}
 	}
 });
@@ -21801,11 +21986,20 @@ provides: [Behavior.BS.Tabs]
 	});
 
 	Behavior.setFilterDefaults('BS.Tabs', {
-		'tabs-selector': '>li',
+		'tabs-selector': 'a:not(.dropdown-toggle)',
 		'sections-selector': '+.tab-content >',
 		'selectedClass': 'active',
 		smooth: false,
 		smoothSize: false
+	});
+
+	Behavior.addGlobalPlugin('BS.Tabs', 'BS.Tabs.CSS', function(el, api, instance){
+		instance.addEvent('active', function(index, section, tab){
+			el.getElements('.active').removeClass('active');
+			tab.getParent('li').addClass('active');
+			var dropdown = tab.getParent('.dropdown');
+			if (dropdown) dropdown.addClass('active');
+		});
 	});
 
 })();
@@ -21813,25 +22007,25 @@ provides: [Behavior.BS.Tabs]
 /*
 ---
 
-name: Behavior.BS.Twipsy
+name: Behavior.BS.Tooltip
 
-description: Instantiates Bootstrap.Twipsy based on HTML markup.
+description: Instantiates Bootstrap.Tooltip based on HTML markup.
 
 license: MIT-style license.
 
 authors: [Aaron Newton]
 
 requires:
- - /Bootstrap.Twipsy
+ - /Bootstrap.Tooltip
  - Behavior/Behavior
  - More/Object.Extras
 
-provides: [Behavior.BS.Twipsy]
+provides: [Behavior.BS.Twipsy, Behavior.BS.Tooltip]
 
 ...
 */
-Behavior.addGlobalFilters({
-	'BS.Twipsy': {
+(function(){
+	var filter = {
 		defaults: {
 			location: 'above', //below, left, right
 			animate: true,
@@ -21842,7 +22036,7 @@ Behavior.addGlobalFilters({
 			trigger: 'hover' //focus, manual
 		},
 		delayUntil: 'mouseover,focus',
-		returns: Bootstrap.Twipsy,
+		returns: Bootstrap.Tooltip,
 		setup: function(el, api){
 			var options = Object.cleanValues(
 				api.getAs({
@@ -21859,13 +22053,17 @@ Behavior.addGlobalFilters({
 				})
 			);
 			options.getTitle = Function.from(api.get('content') || el.get('title'));
-			var tip = new Bootstrap.Twipsy(el, options);
+			var tip = new Bootstrap.Tooltip(el, options);
 			api.onCleanup(tip.destroy.bind(tip));
 			if (api.event) tip.show();
 			return tip;
 		}
-	}
-});
+	};
+	Behavior.addGlobalFilters({
+		'BS.Tooltip': filter,
+		'BS.Twipsy': filter
+	});
+})();
 
 /*
 ---

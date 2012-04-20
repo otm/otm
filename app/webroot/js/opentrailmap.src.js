@@ -25,10 +25,10 @@ provides: [otm-config]
 otm.url = {
 	rpc: '/rpc.php',
 	view: {
-		trails: '/viewtrails/',
-		trail: '/viewtrail/?id=',
+		trails: '/trail/envelope',
+		trail: '/trail/?id=',
 		training: '/viewtraining/?id=',
-		poi: '/poi/?id='
+		poi: '/poi/'
 	}
 };
 
@@ -38,21 +38,21 @@ otm.color = {
 };
 
 otm.icons = {
-	base: '/images/gIcons/',
+	base: '/img/map/',
 	grade: [
-		'/images/gIcons/cyclingmountainnotrated.png',
-		'/images/gIcons/cyclingmountain1.png', 
-		'/images/gIcons/cyclingmountain2.png', 
-		'/images/gIcons/cyclingmountain3.png', 
-		'/images/gIcons/cyclingmountain4.png'
+		'/img/map/cyclingmountainnotrated.png',
+		'/img/map/cyclingmountain1.png', 
+		'/img/map/cyclingmountain2.png', 
+		'/img/map/cyclingmountain3.png', 
+		'/img/map/cyclingmountain4.png'
 	],
-	numeric: '/images/gIcons/km/red',
-	finish: '/images/gIcons/finish.png',
-	high: '/images/gIcons/up.png',
-	low: '/images/gIcons/down.png',
-	trail: '/images/gIcons/smallRoundRed.png',
+	numeric: '/img/map/km/red',
+	finish: '/img/map/finish.png',
+	high: '/img/map/up.png',
+	low: '/img/map/down.png',
+	trail: '/img/map/smallRoundRed.png',
 	poi: {
-		landmark: '/images/gIcons/smallRoundRed.png'
+		landmark: '/img/map/smallRoundRed.png'
 	},
 	getNumeric: function(i){return otm.icons.numeric + i + '.png';}
 };
@@ -2485,10 +2485,9 @@ var Pois = new Class({
 		var envelope = this.map.getBounds();		
 		
 		new Request.JSON({
-			url: otm.url.rpc, 
+			url: '/poi/find.json', 
 			onSuccess: this.callback.bind(this),
 			data: {
-				'call': this.call, 
 				'swlat': envelope.getSouthWest().lat(), 
 				'swlng': envelope.getSouthWest().lng(),
 				'nelat': envelope.getNorthEast().lat(), 
@@ -2498,33 +2497,31 @@ var Pois = new Class({
 		}).get();
 	},
 	
-	drawMarkers: function(response){
-		if (response.code == 0)
-			return;
-		
+	drawMarkers: function(response){		
 		// Mark all polylines to be unlinked
 		for (var i in this.markers){
 			this.markers[i].unlink = 1;
 		}
 
-		for (var i = 0; i < response.count; i++){
+		var count = response.pois.length;
+		for (var i = 0; i < count; i++){
 			var marker;
 			
-			if (this.options.exclude.indexOf(Number(response.poi[i].id)) != -1)
+			if (this.options.exclude.indexOf(Number(response.pois[i].id)) != -1)
 				continue;
 				
-			if (this.markers[response.poi[i].id]) // Excisting trail
-				delete(this.markers[response.poi[i].id].unlink);
+			if (this.markers[response.pois[i].id]) // Excisting trail
+				delete(this.markers[response.pois[i].id].unlink);
 			else{	// new trail
 				poi = new google.maps.Marker({
-			      position: new google.maps.LatLng(response.poi[i].lat, response.poi[i].lng),
-			      icon: otm.icons.poi.landmark,
-      			map: this.map
+			    	position: new google.maps.LatLng(response.pois[i].lat, response.pois[i].lng),
+			    	icon: otm.icons.poi.landmark,
+      				map: this.map
 				});   
 				poi.poi = 1;
-				poi.id = response.poi[i].id;
-				poi.name = response.poi[i].name;
-				poi.description = response.poi[i].description;
+				poi.id = response.pois[i].id;
+				poi.name = response.pois[i].name;
+				poi.description = response.pois[i].description;
 				this.markers[poi.id] = poi;
 
 				google.maps.event.addListener(poi, 'click', function(latlng){
