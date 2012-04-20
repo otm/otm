@@ -37,7 +37,7 @@ Router::connect('/trail/{:id:[0-9]+}', 'Trail::view');
 
 Router::connect('/poi/find.{:type}', array('controller' => 'Poi', 'action' => 'envelope'));
 Router::connect('/poi/{:id:[0-9]+}.{:type}', 'Poi::view');
-Router::connect('/poi/{:id:[0-9]+}', 'Trail::view');
+Router::connect('/poi/{:id:[0-9]+}', 'Poi::view');
 
 /**
  * Connect the rest of `PagesController`'s URLs. This will route URLs like `/pages/about` to
