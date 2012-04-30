@@ -2,11 +2,9 @@
 	$kml = new simpleXMLElement('<kml xmlns="http://www.opengis.net/kml/2.2"></kml>');
 	$document = $kml->addChild('Document');
 	$document->addChild('name','OpenTrailMap.net');
-	//TODO add the envelople coords here?
 	$document->addChild('description','');
 
 	//Create a lineStyle per possible grade
-	//TODO don't display the lineStyle unless actually used
 	$grades = array(
 		'grade1' => 'ffffffff',
 		'grade2' => 'ff00ff00',

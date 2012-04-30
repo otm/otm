@@ -12,7 +12,6 @@
 	$document->addChild('description',$trail->description);
 
 	//Create a lineStyle per possible grade
-	//TODO don't display the lineStyle unless actually used
 	$grades = array(
 		'grade1' => 'ffffffff',
 		'grade2' => 'ff00ff00',
