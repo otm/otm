@@ -27,7 +27,13 @@ use lithium\util\Collection;
 Collection::formats('lithium\net\http\Media');	
 
 Media::type('gpx', 'application/text', array(
-	'view' => 'lithium\template\View', 
+	'view' => 'lithium\template\View',
+	'layout' => false,
+	'template' => false
+));
+
+Media::type('kml', 'application/vnd.google-earth.kml+xml', array(
+	'view' => 'lithium\template\View',
 	'layout' => false,
 	'template' => false
 ));

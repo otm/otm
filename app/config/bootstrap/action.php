@@ -23,7 +23,7 @@ use lithium\action\Dispatcher;
 
 Environment::is(function(){
     $staging    = array('stage.opentrailmap.net', 'dev1234.opentrailmap.net');
-    $local      = array('192.168.0.14', 'localhost', 'dev.opentrailmap.net', 'li3.opentrailmap.net');
+    $local      = array('192.168.0.14', 'localhost', 'localhost:81', 'dev.opentrailmap.net', 'li3.opentrailmap.net');
 
 	if (in_array($_SERVER['HTTP_HOST'], $local))
 		return 'development';
