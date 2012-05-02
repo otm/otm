@@ -1,4 +1,7 @@
-?php ob_start(); ?>
+<?php 
+// This should be a table view of trails
+ob_start(); 
+?>
 <script type="text/javascript">
 window.addEvent("domready", function(){
     google.load("maps", "3", {
@@ -9,14 +12,9 @@ window.addEvent("domready", function(){
 </script>
 <?php $this->scripts(ob_get_clean()); ?>
 
-<div style="
-    position: absolute;
-    right: 0;
-    width: 300px;
-    background-color: green;
-    bottom: 0;
-    top: 45px;
-">menu</div>
+<div class="sidebar">
+    <?php echo $this->_render('element', 'sidebar'); ?>
+</div>
 <div id="map" class="content">
     <div id="map_canvas"></div>
     <div id="ds">

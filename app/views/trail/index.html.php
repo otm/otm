@@ -7,9 +7,13 @@ window.addEvent("domready", function(){
     });
 });
 </script>
-<?php $this->scripts(ob_get_clean()); ?>
+<?php 
+$this->scripts(ob_get_clean());
+$this->preventOverflow = true; 
+?>
 
-<div class="sidebar">menu</div>
+
+<?php echo $this->_render('element', 'sidebar'); ?>
 <div id="map" class="content">
     <div id="map_canvas" style="height: 100%; width: 100%"></div>
     <div id="ds">

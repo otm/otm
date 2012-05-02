@@ -2,7 +2,14 @@
 
 use lithium\core\Environment;
 
+// Set dynamic part of header
 $envWarn = Environment::is('production')?'':' (' . Environment::get() . ')';
+
+// Set class on body
+$bodyClass = "";
+if (isset($this->preventOverflow) && $this->preventOverflow){
+	$bodyClass = 'class="no-y-overflow"';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -42,12 +49,12 @@ $envWarn = Environment::is('production')?'':' (' . Environment::get() . ')';
 	<link rel="apple-touch-icon-precomposed" href="/ico/apple-touch-icon-57-precomposed.png">
   </head>
 
-  <body>
+  <body <?=$bodyClass?>>
 
 	<div class="navbar navbar-fixed-top">
 	  <div class="navbar-inner">
 		<div class="container-fluid">
-		  <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+		  <a class="btn btn-navbar"  data-trigger="toggleReveal" data-togglereveal-options="'target':'!div > .nav-collapse'" data-toggle="collapse" data-target=".nav-collapse">
 			<span class="icon-bar"></span>
 			<span class="icon-bar"></span>
 			<span class="icon-bar"></span>
@@ -57,7 +64,7 @@ $envWarn = Environment::is('production')?'':' (' . Environment::get() . ')';
 			<?php echo $this->_render('element', 'topbarMenu'); ?>
 			<ul class="nav pull-right" data-behavior="BS.Dropdown">
 				<li class="dropdown">
-					<a href="#" class="dropdown-toggle" data-toggle="dropdown">nils<b class="caret"></b></a>
+					<a href="#" class="dropdown-toggle">nils<b class="caret"></b></a>
 					<ul class="dropdown-menu tb-dropdown">
 						<li><a>profile</a></li>
 						<li><a>logout</a></li>

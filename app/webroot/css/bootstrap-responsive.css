@@ -379,10 +379,6 @@
   }
   .navbar-fixed-top {
     position: static;
-    margin-bottom: 18px;
-  }
-  .navbar-fixed-top .navbar-inner {
-    padding: 5px;
   }
   .navbar .container {
     width: auto;
@@ -478,13 +474,17 @@
   }
   .nav-collapse {
     overflow: hidden;
-    height: 0;
+    height: auto;
+    display: none;
   }
 }
 @media (min-width: 980px) {
   .nav-collapse.collapse {
     height: auto !important;
     overflow: visible !important;
+  }
+  .nav-collapse {
+    display: block !important;
   }
 }
 @media (min-width: 1200px) {
