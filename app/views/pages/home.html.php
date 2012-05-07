@@ -3,8 +3,10 @@
 use lithium\net\http\Router;
 
 $this->title('opentrailmap.net');
-?>
 
+//text-shadow: #777 0 0 8px;
+
+?>
 <div class="container">
 
   <!-- Main hero unit for a primary marketing message or call to action -->
@@ -13,10 +15,9 @@ $this->title('opentrailmap.net');
     <div style="
       color: whiteSmoke;
       position: absolute;
-      top: 18px;
+      top: 293px;
       left: 15px;
       font-size: 65px;
-      text-shadow: #777 0 0 8px;
       line-height: 35px;
     ">Trailmap<br/><span style="
       font-size: 27px;

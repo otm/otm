@@ -9,7 +9,7 @@ window.addEvent("domready", function(){
 </script>
 <?php 
 $this->scripts(ob_get_clean());
-$this->preventOverflow = true; 
+$this->preventOverflow = true;
 ?>
 
 
