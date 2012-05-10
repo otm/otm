@@ -159,36 +159,56 @@ otm.searchPanel = (function(){
 		}
 		visable = !visable;
 		return visable;
-	}
+	};
 })();
 
-otm.sidebar = function(){
-	var sidebar = $$('.sidebar.active')[0];
-	var trails = new Fx.Tween(sidebar, {
-		transition: 'linear',
-		duration: 500,
-		property: 'right'
-	});
+otm.toggleSidebar = (function(){
+	var visable = true;	
+	var mapControl;
 
-	var map = new Fx.Tween('map', {
-		transition: 'linear',
-		duration: 500,
-		property: 'right'
-	});
-	var redraw = function(){
-		google.maps.event.trigger(otm.map.instance, 'resize');
-		new MapControl(otm.map.instance, {
-			controls: ['showPanel'], 
-			restore: {
-				action: function(){window.location = otm.url.view.trails;}
-			}
+	return function(){
+		var sidebar = $('sidebar');
+		var trails = new Fx.Tween(sidebar, {
+			transition: 'linear',
+			duration: 500,
+			property: 'right'
 		});
+
+		var map = new Fx.Tween('map', {
+			transition: 'linear',
+			duration: 500,
+			property: 'right'
+		});
+		if (visable){
+			if (!mapControl){
+				mapControl = new MapControl(otm.map.instance, {
+					controls: ['showPanel'], 
+					showPanel: {
+						action: (function(){return otm.toggleSidebar;})()
+					},
+					position: google.maps.ControlPosition.RIGHT_TOP,
+					visable: false
+				});
+
+			}
+
+			var redraw = function(){
+				google.maps.event.trigger(otm.map.instance, 'resize');
+				mapControl.toggle();
+			};
+			trails.start(-300);
+			map.start(0).chain(redraw);
+
+		}
+		else{
+			trails.start(0);
+			map.start(300).chain(redraw);
+			mapControl.toggle();
+		}
+		visable = !visable;
 	};
-	trails.start(-350);
-	map.start(0).chain(redraw);
 
-
-};
+})();
 
 otm.viewTrailsFluid = function(){
 	var opts = window.location.search.substr(1).parseQueryString();
@@ -209,6 +229,10 @@ otm.viewTrailsFluid = function(){
 	  timer = (otm.refresh).delay(50);
 	});
 	
+	// Enable show/hide sidebar
+	$$('.hide-sidebar').addEvent('click', otm.toggleSidebar);
+
+	/*
 	$$('.trail-info-short').addEvent('click', function(){
 		$('trail-info').removeClass('hide');
 		var trails = new Fx.Tween('trails-info', {
@@ -250,7 +274,7 @@ otm.viewTrailsFluid = function(){
 		map.start(0).chain(redraw);
 
 	});		
-	
+	*/
 	if (opts.fullscreen && opts.fullscreen == 1)
 		$('map_canvas').setStyle('height', window.innerHeight-70);
 

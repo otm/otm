@@ -4,15 +4,15 @@ $$('.sidebar .scrollpanel')[0].setStyle('top', $$('.sidebar .panel')[0].getSize(
 
 */
 ?>
-<div class="sidebar active">
-	<div class="sidebar-instance" style="
+<div id="sidebar" class="sidebar">
+	<div class="sidebar-instance active" style="
 		position: absolute;
 		height: 100%;
 		right: 0;
 		border-left: 1px #DDD solid;">
 		<div class="panel"> 
 			<div class="topbar">
-				<div class="arrow-right-btn"><i class="carret-right"></i></div>
+				<div class="hide-sidebar arrow-right-btn"><i class="carret-right"></i></div>
 				<div class="pull-right"><a id="searchbtn" href="#">Search <b class="caret"></b></a></div>
 			</div>
 			<div class="search toggle-off">

@@ -27,8 +27,9 @@ var MapControl = new Class({
 
 	options: {
 		position: null,
+		id: null,
+		visable: true,
 		css: {},
-		index: -1,
 		controls: [],
 		maximize: {
 			icon: '/images/arrow_expand.png',
@@ -47,7 +48,6 @@ var MapControl = new Class({
 			icon: '/img/otm.panel-expand.png',
 			tooltip: 'Display sidebar',
 			id: -1,
-			action: function(){console.log('show sidebar'); }
 		},
 
 		allTrails: {
@@ -96,6 +96,8 @@ var MapControl = new Class({
 
 	map: null,
 	div: null,
+	id: null,
+	visable: false,
 
 	initialize: function(map, options){
 		this.setOptions(options);
@@ -109,9 +111,9 @@ var MapControl = new Class({
 		this.options.controls.each(function(control){
 			this.add(control);	
 		}.bind(this));
-		this.map.controls[this.options.position].push(this.div);
-		
-
+		if (this.options.visable){
+			this.toggle();
+		}
 	},
 	
 	createHtml: function(){
@@ -138,6 +140,16 @@ var MapControl = new Class({
 				}.bind(this)
 			}
 		}));		
+	},
+	toggle: function(){
+		if (this.visable){
+			this.map.controls[this.options.position].removeAt(this.id);
+		}
+		else{
+			// push returns the length, so we need to substract
+			this.id = this.map.controls[this.options.position].push(this.div) - 1;
+		}
+		this.visable = !this.visable;
 	}
 	
 });
