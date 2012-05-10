@@ -124,7 +124,8 @@ otm.map = {
 			if (mapSearch){
 				mapSearch.addEvent('submit', function(e){
 					e.preventDefault();
-					otm.map.showAddress(this.address.value); return false;
+					otm.map.showAddress(this.address.value); 
+					return false;
 				});
 			}
 		}

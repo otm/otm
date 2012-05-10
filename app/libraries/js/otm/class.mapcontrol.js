@@ -44,7 +44,7 @@ var MapControl = new Class({
 			action: function(){window.location = otm.url.view.trail + this.options.restore.id;}
 		},
 		showPanel: {
-			icon: '/images/prospect/otm.panel-expand.png',
+			icon: '/img/otm.panel-expand.png',
 			tooltip: 'Display sidebar',
 			id: -1,
 			action: function(){console.log('show sidebar'); }

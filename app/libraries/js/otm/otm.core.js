@@ -101,10 +101,12 @@ otm.refresh = function(){
 	var headerHight = 45;
 	var contentHeight = window.getSize().y - headerHight;
 	var panelHeight = 0;
+	/* TODO: Remove
 	$$('.sidebar .panel').each(function(el){
 		panelHeight =+ el.getSize().y
 	});
 	$$('.sidebar .scrollpanel')[0].setStyle('top', panelHeight);
+	*/
 	//$('map_canvas').setStyle('height', contentHeight);
 	/*
 	$$('.auto-size-v').setStyle('height', contentHeight);
@@ -119,11 +121,23 @@ otm.refresh = function(){
 		google.maps.event.trigger(otm.map.instance, 'resize');
 };
 
+/* TODO: Add more dynamic functionality 
+
+	var panelHeight = 0;
+	$$('.sidebar .panel').each(function(el){
+		panelHeight =+ el.getSize().y
+	});
+	$$('.sidebar .scrollpanel')[0].setStyle('top', panelHeight);
+*/
 otm.searchPanel = (function(){
-	var visable = true;
+	var visable = false;	
 	
-	
-	return function(){
+	return function(action){
+		if (action && action == 'init'){
+			$$('.sidebar .panel .search')[0].slide('out');
+			return;
+		}
+
 		var searchPanelFx = new Fx.Tween($$('.scrollpanel')[0], {
 			duration: 500,
 			property: 'top'
@@ -132,28 +146,68 @@ otm.searchPanel = (function(){
 		if (visable){
 			$$('.sidebar .panel .search')[0].slide('out');
 			searchPanelFx.start(45+68, 45);
+			var caret = $$('#searchbtn b')[0];
+			caret.addClass('caret');
+			caret.removeClass('caret-up');
 		} 
 		else{
 			$$('.sidebar .panel .search')[0].slide('in');
 			searchPanelFx.start(45, 45+68);
+			var caret = $$('#searchbtn b')[0];
+			caret.addClass('caret-up');
+			caret.removeClass('caret');
 		}
 		visable = !visable;
 		return visable;
 	}
 })();
 
+otm.sidebar = function(){
+	var sidebar = $$('.sidebar.active')[0];
+	var trails = new Fx.Tween(sidebar, {
+		transition: 'linear',
+		duration: 500,
+		property: 'right'
+	});
+
+	var map = new Fx.Tween('map', {
+		transition: 'linear',
+		duration: 500,
+		property: 'right'
+	});
+	var redraw = function(){
+		google.maps.event.trigger(otm.map.instance, 'resize');
+		new MapControl(otm.map.instance, {
+			controls: ['showPanel'], 
+			restore: {
+				action: function(){window.location = otm.url.view.trails;}
+			}
+		});
+	};
+	trails.start(-350);
+	map.start(0).chain(redraw);
+
+
+};
+
 otm.viewTrailsFluid = function(){
 	var opts = window.location.search.substr(1).parseQueryString();
 	var options;
 	var timer;
 	
+	// enable panel animations
+	otm.searchPanel('init');
+	$('searchbtn').addEvent('click', otm.searchPanel);
+
+	// Enable search
+	otm.map.search.init();
+
+	// Enable the refresh of the map
 	otm.refresh();
 	window.addEvent('resize', function(){
 	  $clear(timer);
 	  timer = (otm.refresh).delay(50);
 	});
-
-	$('searchbtn').addEvent('click', otm.searchPanel);
 	
 	$$('.trail-info-short').addEvent('click', function(){
 		$('trail-info').removeClass('hide');

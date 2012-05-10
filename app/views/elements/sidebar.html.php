@@ -4,7 +4,7 @@ $$('.sidebar .scrollpanel')[0].setStyle('top', $$('.sidebar .panel')[0].getSize(
 
 */
 ?>
-<div class="sidebar">
+<div class="sidebar active">
 	<div class="sidebar-instance" style="
 		position: absolute;
 		height: 100%;
@@ -13,12 +13,11 @@ $$('.sidebar .scrollpanel')[0].setStyle('top', $$('.sidebar .panel')[0].getSize(
 		<div class="panel"> 
 			<div class="topbar">
 				<div class="arrow-right-btn"><i class="carret-right"></i></div>
-				<div class="pull-right"><a id="searchbtn" href="#">Search</a></div>
+				<div class="pull-right"><a id="searchbtn" href="#">Search <b class="caret"></b></a></div>
 			</div>
 			<div class="search toggle-off">
-				<!-- $$('.sidebar .panel .searchbar')[0].slide('out');  -->
-				<form class="well form-search">
-					<input type="text" class="input-144 search-query" placeholder="Location, Country">
+				<form id="mapLocationSearch" class="well form-search clear">
+					<input id="address" type="text" class="input-144 search-query" placeholder="Location, Country">
 					<button type="submit" class="btn"><i class="icon-search"></i> Search</button>
 				</form>
 			</div>
