@@ -158,6 +158,7 @@ otm.drawTrail = function(trail, options){
 	
 otm.onDrawTrail = function(trail){
 
+	/* TODO: on mouse over effect 
 	google.maps.event.addListener(trail, 'mouseover', function(latlng){
 		window.cursor = 'point';
 		$('name').set('text', this.name);
@@ -166,53 +167,111 @@ otm.onDrawTrail = function(trail){
 		$('length').set('text', this.length + 'km');
 		$('grade').set('text', this.grade);	
 	});		
-		
+	*/	
 
-	var li = new Element('li', {
-		id: trail.trailId,
+	var trailinfo = new Element('div', {
+		id: trail.id,
+		'class': 'trail-info-short',
 		events: {
 			'mouseover': function(){
 				var trail = otm.trails.getTrail(this.get('id'));
+				if (!trail){
+					return false;
+				}
 				trail.origColor = trail.strokeColor;
-				trail.setOptions({strokeColor: '#9400d3'});
-				//currentTrail = this.get('id');
+				trail.origOpacity = trail.strokeOpacity;
+				trail.setOptions({
+					strokeColor: '#9400d3',
+					strokeOpacity: 1
+				});
+				/*
 				$('name').set('text', trail.name);
 				$('name').set('href', otm.url.view.trail + trail.trailId);
 				$('name').addEvent('click', otm.setHistory);
 				$('length').set('text', trail.length + 'km');
 				$('grade').set('text', trail.grade);
+				*/
 			},
 			'mouseout': function(){
 				var trail = otm.trails.getTrail(this.get('id'));
-				trail.setOptions({strokeColor: trail.origColor});
+				if  (!trail){
+					return false;
+				}
+				trail.setOptions({
+					strokeColor: trail.origColor,
+					strokeOpacity: trail.origOpacity
+				});
+			},
+			'click': function(){
+				otm.showTrail(trail.id);
 			}
 		}
 	});
 	
-	var result = $('result');
-	if (result.retrieve('empty' , true)){
-		result.empty();
-		result.store('empty', false);
+	var panel = $('trailpanel');
+	if (panel.retrieve('empty' , true)){
+		panel.empty();
+		panel.store('empty', false);
 	}	
-	var div = new Element('div');
-
-	var a = new Element('a', {
-		href: otm.url.view.trail + trail.trailId,
-		'events': {
-			'click': otm.setHistory
-		},
+	trailinfo.grab(new Element('h3',{
+		'class': otm.grade[trail.grade],
 		text: trail.name
-	});
-	div.grab(a);
-	li.grab(div)
-	result.grab(li);
+	}));
+	
+	trailinfo.grab(new Element('p', {
+		text: "En bit av beskrivningen"
+	}));
 
-	if (!result.getFirst().getFirst().hasClass('top'))
-		result.getFirst().getFirst().addClass('top');
+	var subinfo = new Element('p', {
+		'class': 'subinfo'	
+	})
+
+	subinfo.grab(new Element('a', {
+		'text': 'GPX',
+		href: "#",
+		events: {
+			'click': function(){console.log('GPX, trialid=' + trail.id);}
+		}
+	}));
+	subinfo.grab(new Element('span', {
+		'text': " - "
+	}));
+	subinfo.grab(new Element('a', {
+		'text': 'KML',
+		href: "#",
+		events: {
+			'click': function(){console.log('KML, trialid=' + trail.id);}
+		}
+	}));
+	trailinfo.grab(subinfo);
+	panel.grab(trailinfo);
 	
 	otm.onTrailClick(trail);
 };
 
+otm.showTrail = function(id){
+	// remove trail
+	if (!id){
+		if (!otm.trail){
+			return false;
+		}
+
+		otm.trails.opacity(otm.trails.options.opacity);
+		otm.trail.remove;
+		delete otm.trail;
+		return true;
+	}
+
+	if (this.trail){
+		otm.trail.remove();
+		otm.trails.include();
+		delete otm.trail;
+	}
+
+	otm.trails.exclude(id);
+	otm.trails.opacity(0.1);
+	otm.trail = new Trail(id, otm.map.instance);
+}
 
 otm.onTrailClick = function(trail){
 	google.maps.event.addListener(trail, 'click', function(latlng){
@@ -220,7 +279,7 @@ otm.onTrailClick = function(trail){
 		if (this.poi)
 			window.location = viewpoi + this.poi;
 		else if (this.trail)
-			window.location = otm.url.view.trail + this.trailId;
+			window.location = otm.url.view.trail + this.id;
 	});
 
 };

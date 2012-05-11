@@ -32,6 +32,9 @@ otm.url = {
 	}
 };
 
+otm.grade = [
+	'white', 'green', 'blue', 'red', 'black'
+],
 otm.color = {
 	trail: '#ff0000',
 	grade: ['#FFFFFF', '#00FF00', '#0000FF', '#FF0000', '#000000']

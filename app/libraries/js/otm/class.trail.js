@@ -31,7 +31,8 @@ var Trail = new Class({
 		opacity: 0.5,
 		weight : 2,
 		center: true,
-		call: 'trail.get.polyline',
+		url: '/trail/{id}.json',
+		call: '',
 		overlay: {
 			start: false,
 			end: false,
@@ -72,14 +73,17 @@ var Trail = new Class({
 		this.request();
 	},
 
-	request: function(){		
+	request: function(){
+
 		new Request.JSON({
-			url: otm.url.rpc, 
-			onSuccess: this.draw.bind(this),
+			url: this.options.url.substitute({id: this.id}),
+			onSuccess: this.draw.bind(this)
+			/*,
 			data: {
 				'call': this.options.call,
 				'id': this.id
 			}
+			*/
 		}).get();
 	},
 	
@@ -313,7 +317,7 @@ var Trail = new Class({
 			this.options.color = otm.color.grade[response.grade]
 			
 		// Create array for initializing the polyline
-		var trail = response.trail;
+		var trail = response.polyline;
 		var length = trail.length;
 		var points = [];
 		for (var i = 0; i < length; i++){

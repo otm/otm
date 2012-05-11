@@ -280,7 +280,9 @@ otm.viewTrailsFluid = function(){
 
 	var map = otm.map.init();
 			
-	otm.trails = new Trails(map, options);
+	otm.trails = new Trails(map, {
+		onDrawTrail: otm.onDrawTrail
+	});
 	otm.pois = new Pois(map, {maxZoom: 1});
 
 };

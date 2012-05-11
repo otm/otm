@@ -31,6 +31,7 @@ var Trails = new Class({
 		zIndex: null,
 		polyline: true,
 		overlay: 'auto',
+		opacity: 0.5,
 		marker: true,
 		minZoom: 10, 		// The zoom level to switch from polylines to markers
 		maxZoom: 0,
@@ -45,11 +46,13 @@ var Trails = new Class({
 	polylines: [],
 	markers: [],
 	isRedrawing: false,
+	_opacity: null,
 	
 	initialize: function(map, options){
 		this.setOptions(options);
 
 		this.map = map;
+		this._opacity = this.options.opacity;
 			
 		this.setupEvents();
 		/* Removed temporarly
@@ -71,6 +74,55 @@ var Trails = new Class({
 			delete(polylines[trailId]);
 		}.bind(this));
 	},	
+
+	/*
+	* set the opacity of the trails
+	* @var opacity, a value between 0 and 1. if null the opacity will be reset to the 
+	* value specified in the options
+	*/
+	opacity: function(opacity){
+		if (!opacity){
+			opacity = this.options.opacity;
+		}
+
+		this.polylines.each(function(e){
+			e.setOptions({
+				strokeOpacity: opacity
+			})
+		});
+		this._opacity = opacity;
+
+		return true;
+	},
+
+	exclude: function(id){
+		if (!id){
+			return false;		
+		}
+
+		// Check if it's already excluded
+		if (this.options.exclude.indexOf(id) == -1){
+			this.options.exclude.push(id);
+			return true;
+		}
+
+		return false;
+	},
+
+	include: function(id){
+		if (!id){
+			this.options.exclude.empty();
+			return true;
+		}
+
+		var idx = this.options.exclude.indexOf(id)
+		if (idx != -1){
+			this.options.exclude.splice(idx, 1);
+			return true;
+		}
+
+		return false;
+	},
 
 	getTrail: function(id){
 		if(this.polylines[id])
@@ -147,7 +199,8 @@ var Trails = new Class({
 				trail = otm.drawTrail(response.trails[i].polyline, {
 					map: this.map,
 					zIndex: this.options.zIndex,
-					color: this.options.colorGraded ? otm.color.grade[response.trails[i].grade] : this.options.color
+					color: this.options.colorGraded ? otm.color.grade[response.trails[i].grade] : this.options.color,
+					opacity: this._opacity
 				});
 
 				trail.trail = 1;
